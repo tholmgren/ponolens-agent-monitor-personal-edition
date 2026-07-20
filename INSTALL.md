@@ -1,6 +1,6 @@
 # Installing the PonoLens competition preview
 
-The current competition edition is a script-installed local service with a browser dashboard. It is not a packaged native Mac application. A polished PonoLens Personal Mac edition is planned after the competition.
+The current competition edition targets macOS only. It is a script-installed local service with a browser dashboard and a locally generated `PonoLens.app` launcher, not yet a signed native distribution. Windows and Linux are on the roadmap.
 
 ## Recommended installation
 
@@ -10,7 +10,7 @@ From a committed checkout, run:
 ./install.sh
 ```
 
-The installer copies the committed source to `~/.ponolens/application`, starts the loopback-only service, and opens the dashboard. It does not silently install agent hooks; enable each integration from the dashboard.
+The installer copies the committed source to `~/.ponolens/application`, starts the loopback-only service, creates `~/Applications/PonoLens.app`, and opens the dashboard. It does not silently install agent hooks; enable each integration from the dashboard.
 
 Install the current public beta directly from GitHub:
 
@@ -24,6 +24,7 @@ The downloaded script clones `https://github.com/tholmgren/ponolens-agent-monito
 
 - Node.js 22.5 or newer
 - Git
+- macOS (the current beta does not support Windows or Linux)
 - A supported harness: Cursor, Claude Code CLI, Codex, or Windsurf
 - A local browser for the dashboard
 - Optional: Ollama for local Safe Prompt generation
@@ -45,6 +46,8 @@ npm start
 No `npm install` step is currently required because the MVP has no third-party runtime dependencies.
 
 Open [http://127.0.0.1:4317](http://127.0.0.1:4317). Keep this process running while using monitored harnesses. PonoLens writes its local database to `~/.ponolens/ponolens.db` unless `PONOLENS_DATA_DIR` is set.
+
+For later use, open **PonoLens** from your user Applications folder (`~/Applications/PonoLens.app`). The launcher checks the local collector, starts it if necessary, and opens the dashboard. It does not configure Pono Guard integrations automatically.
 
 ### Runtime configuration
 
@@ -216,7 +219,7 @@ The current dashboard focuses on installation and testing. To remove an integrat
 
 ## Uninstalling the application
 
-Run `./uninstall.sh`. It stops the competition-preview service and removes `~/.ponolens/application`. It intentionally leaves the local database and harness configurations in place. Use **Delete all local data** before uninstalling if you want the local database and policies removed, and remove harness integrations separately.
+Run `./uninstall.sh`. It stops the competition-preview service and removes `~/.ponolens/application` plus the installer-created `~/Applications/PonoLens.app`. It intentionally leaves the local database and harness configurations in place. Use **Delete all local data** before uninstalling if you want the local database and policies removed, and remove harness integrations separately.
 
 ## License
 

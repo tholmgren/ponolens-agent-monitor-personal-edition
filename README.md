@@ -6,7 +6,7 @@ PonoLens is a local-first privacy monitor and Safe Prompt workspace for AI codin
 
 > **Beta software:** Review the documented harness coverage and limitations before relying on PonoLens. Report Only is stable; Block, Redact, and Agent Command Monitoring are experimental. PonoLens supports privacy workflows but is not a compliance certification or a substitute for organizational controls.
 
-The competition preview supports Codex, Claude Code CLI, Cursor, and Windsurf through a local browser dashboard. Coverage differs by harness and is always described honestly in the dashboard. It is installed with `install.sh`; it is not yet the planned PonoLens Personal Mac application.
+The competition preview supports Codex, Claude Code CLI, Cursor, and Windsurf through a local browser dashboard. Coverage differs by harness and is always described honestly in the dashboard. This beta currently targets macOS only; Windows and Linux are on the roadmap.
 
 ## Quick start
 
@@ -30,7 +30,7 @@ The beta uses one script-installed local service and browser dashboard. Install 
 curl -fsSL https://raw.githubusercontent.com/tholmgren/ponolens-agent-monitor-personal-edition/main/install.sh | sh
 ```
 
-The installer downloads the public GitHub repository, requires Node.js 22.5+ and Git, installs the application under `~/.ponolens/application`, starts the loopback-only service, and opens the dashboard. You can alternatively clone the repository and run `./install.sh` from the checkout. A signed native PonoLens Personal Mac edition is planned after the competition.
+The installer downloads the public GitHub repository, requires Node.js 22.5+ and Git, installs the application under `~/.ponolens/application`, starts the loopback-only service, and opens the dashboard. It also creates `~/Applications/PonoLens.app`; opening that launcher restarts the service when necessary and opens the dashboard. You can alternatively clone the repository and run `./install.sh` from the checkout. The launcher is locally generated and is not yet a signed native distribution.
 
 ## What PonoLens does
 
@@ -177,7 +177,7 @@ The API decision does not prove an action was blocked. The harness adapter must 
 2. Token and cost metadata by model, harness, project, and organization, without retaining prompt content
 3. Broader MCP and Windsurf post-action receipt coverage
 4. OpenClaw and Hermes research/integrations
-5. Signed native PonoLens Personal Mac application after the competition
+5. Signed native PonoLens Personal Mac application plus Windows and Linux packaging after the competition
 6. PonoLens Pro production-grade prevention, updates, and professional workflows
 7. PonoLens Enterprise policy, fleet, reporting, and optional redacted metadata synchronization
 
