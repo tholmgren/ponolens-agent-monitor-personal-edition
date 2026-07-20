@@ -12,13 +12,13 @@ From a committed checkout, run:
 
 The installer copies the committed source to `~/.ponolens/application`, starts the loopback-only service, and opens the dashboard. It does not silently install agent hooks; enable each integration from the dashboard.
 
-After the repository and download endpoint are public, the intended marketing command is:
+Install the current public beta directly from GitHub:
 
 ```bash
-curl -fsSL https://get.ponolens.com/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/tholmgren/ponolens-agent-monitor-personal-edition/main/install.sh | sh
 ```
 
-While the GitHub repository is private, clone it with an authorized account and run the script from the checkout. The installer defaults to `https://github.com/tholmgren/ponolens-agent-monitor-personal-edition.git`; `PONOLENS_REPOSITORY_URL` can override that source. The script requires Git and Node.js; it does not download or mount a DMG.
+The downloaded script clones `https://github.com/tholmgren/ponolens-agent-monitor-personal-edition.git`. You can also clone the repository yourself and run `./install.sh` from the checkout. `PONOLENS_REPOSITORY_URL` can override the source for testing or a fork. The script requires Git and Node.js; it does not download or mount a DMG.
 
 ## Requirements
 

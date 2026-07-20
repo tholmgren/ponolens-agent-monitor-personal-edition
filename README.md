@@ -24,13 +24,13 @@ See [INSTALL.md](INSTALL.md) for harness-specific setup, verification, troublesh
 
 ## Competition-preview installation
 
-The beta uses one script-installed local service and browser dashboard. After the repository is public, the intended command is:
+The beta uses one script-installed local service and browser dashboard. Install the current public release with:
 
 ```bash
-curl -fsSL https://get.ponolens.com/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/tholmgren/ponolens-agent-monitor-personal-edition/main/install.sh | sh
 ```
 
-While the repository is private, clone it with an authorized GitHub account and run `./install.sh` from the checkout. The installer requires Node.js 22.5+ and Git, installs the application under `~/.ponolens/application`, starts the loopback-only service, and opens the dashboard. A signed native PonoLens Personal Mac edition is planned after the competition.
+The installer downloads the public GitHub repository, requires Node.js 22.5+ and Git, installs the application under `~/.ponolens/application`, starts the loopback-only service, and opens the dashboard. You can alternatively clone the repository and run `./install.sh` from the checkout. A signed native PonoLens Personal Mac edition is planned after the competition.
 
 ## What PonoLens does
 
