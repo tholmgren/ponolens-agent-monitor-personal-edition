@@ -1,0 +1,19 @@
+{
+  "name": "ponolens",
+  "version": "0.1.0",
+  "description": "Local-first privacy monitoring and Safe Prompt protection for AI coding agents.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tholmgren/ponolens-agent-monitor-personal-edition.git"
+  },
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node --experimental-sqlite src/server.mjs",
+    "test": "node --experimental-sqlite --test test/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=22.5"
+  }
+}

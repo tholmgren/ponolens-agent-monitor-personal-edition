@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#07110f" />
+    <title>PonoLens — See what your AI agents see</title>
+    <script src="/appearance-bootstrap.js"></script>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <div class="mobile-brand" aria-label="PonoLens"><span class="mobile-brand-mark" aria-hidden="true">◉</span><strong>PonoLens</strong></div>
+    <button id="mobile-menu-button" class="mobile-menu-button" type="button" aria-label="Open navigation menu" aria-expanded="false" aria-controls="primary-sidebar"><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span></button>
+    <button id="nav-backdrop" class="nav-backdrop" type="button" aria-label="Close navigation menu" hidden></button>
+    <div class="shell">
+      <aside id="primary-sidebar" class="sidebar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true"><span></span></div>
+          <div><strong>PonoLens</strong><small>Agent privacy</small></div>
+        </div>
+        <nav aria-label="Primary">
+          <button class="nav-item active" data-view="live"><span>◉</span> Live Lens</button>
+          <button class="nav-item" data-view="safe"><span>✎</span> Safe Prompt</button>
+          <button class="nav-item" data-view="trail"><span>⌁</span> Data Trail</button>
+          <button class="nav-item" data-view="policies"><span>◇</span> Pono Guard</button>
+          <button class="nav-item" data-view="advanced"><span>⌘</span> Advanced Guard</button>
+          <button class="nav-item" data-view="receipts"><span>▤</span> Privacy Receipts</button>
+          <button class="nav-item" data-view="faq"><span>?</span> FAQ</button>
+          <button class="nav-item" data-view="settings"><span>⚙</span> Settings</button>
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="local-pill"><i></i> Local protection active</div>
+          <button class="settings-button" type="button">Settings <span>⌘,</span></button>
+        </div>
+      </aside>
+
+      <main id="main-content" tabindex="-1">
+        <section id="safe-prompt" class="safe-prompt-section" aria-labelledby="safe-prompt-title">
+          <div class="section-heading">
+            <div><span class="label">PRE-SEND PROTECTION</span><h2 id="safe-prompt-title">Check a prompt before it leaves your device</h2></div>
+            <button id="close-safe-prompt" type="button" class="secondary-button">Back to Live Lens</button>
+          </div>
+          <ol class="safe-stepper" aria-label="Safe Prompt progress"><li class="current" data-safe-step-indicator="1"><span>1</span>Create</li><li data-safe-step-indicator="2"><span>2</span>Draft</li><li data-safe-step-indicator="3"><span>3</span>Send</li><li data-safe-step-indicator="4"><span>4</span>Restore</li></ol>
+          <form id="safe-prompt-form" class="settings-card safe-prompt-card">
+            <div><span class="label">STEP 1</span><h2>Create your prompt</h2></div>
+            <label for="safe-prompt-text"><strong>What do you want the AI to do?</strong><small>Write naturally. The original stays in this browser and is not saved.</small></label>
+            <textarea id="safe-prompt-text" rows="10" placeholder="Paste your prompt here before sending it to an AI side chat…" required></textarea>
+            <div class="safe-prompt-actions"><span id="safe-prompt-status" role="status" aria-live="polite">Nothing has been sent.</span><button class="primary-button" type="submit">Next: review draft</button></div>
+          </form>
+          <section id="round-trip-panel" class="settings-card round-trip-panel" hidden aria-label="Safe Prompt workflow">
+            <div id="safe-draft-step" class="wizard-step"><span class="label">STEP 2</span><h2>Review the safe draft</h2><div id="local-scan-result" class="local-scan-result" aria-live="polite"><strong>Local browser scan ready</strong><p>Identifiers are removed; sensitive subject matter is retained with a warning.</p><div id="local-findings" class="local-findings"></div></div><label for="sanitized-preview"><strong>Draft Safe Prompt</strong><small>You may edit this draft. PonoLens will check any changes before continuing.</small></label><textarea id="sanitized-preview" rows="10" placeholder="The safe draft will appear here…"></textarea><div class="wizard-actions"><button id="back-to-create" class="secondary-button" type="button">Back</button><button id="check-safe-draft" class="primary-button" type="button">Check draft and continue</button></div></div>
+            <div id="safe-copy-step" class="wizard-step" hidden><span class="label">STEP 3</span><h2 id="round-trip-title">Use the tokenized prompt</h2><div class="round-trip-warning"><strong>Before sending:</strong> Review the remaining narrative and use only an organization-approved model or provider.</div><label for="tokenized-prompt"><strong>Final protected prompt</strong><small>Copy it manually or send it to the selected default model.</small></label><textarea id="tokenized-prompt" rows="10" readonly></textarea><div class="send-provider-note"><div><span>Default LLM</span><strong id="send-provider-summary">Loading selection…</strong><small>Your prompt and browser token vault will remain intact if you change it.</small></div><button id="change-send-provider" type="button" class="secondary-button">Change default LLM</button></div><div class="wizard-actions"><button id="back-to-draft" class="secondary-button" type="button">Back</button><button id="copy-tokenized" class="secondary-button" type="button">Copy</button><button id="send-default-llm" class="primary-button" type="button">Send to default LLM</button><button id="next-to-reply" class="primary-button" type="button">Next: paste reply</button></div></div>
+            <div id="safe-reply-step" class="wizard-step" hidden><span class="label">STEP 4</span><h2>Restore the reply locally</h2><label for="model-reply"><strong>Model reply</strong><small>Paste a manual reply here. Ollama/API replies appear here automatically.</small></label><textarea id="model-reply" rows="10" placeholder="Paste the reply containing [[PLACEHOLDER_1]] tokens…"></textarea><div class="wizard-actions"><button id="back-to-copy" class="secondary-button" type="button">Back</button><button id="restore-reply" class="primary-button" type="button">Reinsert protected data</button></div><div id="restored-step" hidden><label for="restored-reply"><strong>Locally restored result</strong><small>This contains sensitive information. Do not send it back to an unapproved model.</small></label><textarea id="restored-reply" rows="10" readonly></textarea><button id="copy-restored" class="secondary-button" type="button">Copy restored result</button></div></div>
+            <p id="round-trip-status" role="status" aria-live="polite"></p>
+          </section>
+        </section>
+
+        <header>
+          <div>
+            <p class="eyebrow">Live Lens</p>
+            <h1>See where your data goes.</h1>
+          </div>
+          <div class="header-actions">
+            <div class="monitoring"><span></span> Monitoring <strong id="monitored-count">0</strong>&nbsp;agents</div>
+            <button id="rescan-header" class="primary-button">Scan agents</button>
+          </div>
+        </header>
+
+        <section class="hero-grid">
+          <article class="status-card">
+            <div class="status-top">
+              <div class="shield-icon">✓</div>
+              <div><span class="label">YOUR PROTECTION</span><h2>PonoLens is watching</h2></div>
+            </div>
+            <p>PonoLens keeps its audit logs on this device. Your AI agents may send prompts, files, and context to model providers or connected services; PonoLens makes those transfers visible.</p>
+            <div class="stats" id="stats"></div>
+          </article>
+
+          <article class="agents-card">
+            <div class="card-heading"><div><span class="label">LOCAL AGENTS</span><h2>Installed harnesses</h2></div><button id="detect-agents" class="text-button">Scan again</button></div>
+            <div id="integrations" class="integrations"></div>
+          </article>
+        </section>
+
+        <section class="flow-card">
+          <div class="card-heading">
+            <div><span class="label">RIGHT NOW</span><h2>How your information is moving</h2></div>
+            <div class="legend"><span><i class="safe"></i> Expected</span><span><i class="review"></i> Review</span><span><i class="danger"></i> Blocked</span></div>
+          </div>
+          <div id="flow" class="flow-empty">
+            <div class="pulse-ring"><span></span></div>
+            <h3>No unusual activity</h3>
+            <p>Use a connected agent normally. New activity will appear here.</p>
+          </div>
+        </section>
+
+        <section class="activity-section">
+          <div class="section-heading"><div><span class="label">PLAIN-LANGUAGE ACTIVITY</span><h2>What your agents are doing</h2></div><div class="activity-controls"><span id="activity-live-status" class="live-status">Connecting…</span><label class="filter-control"><span class="sr-only">Filter activity</span><select id="activity-filter"></select></label></div></div>
+          <div id="activity" class="activity-list"></div>
+          <div class="activity-more"><button id="show-more-activity" type="button" class="secondary-button">Show more activity</button></div>
+        </section>
+
+        <section id="activity-history" class="trail-section" aria-labelledby="trail-title">
+          <div class="section-heading trail-heading">
+            <div><span class="label">DATA TRAIL</span><h2 id="trail-title">What your agents are doing</h2><p>Review retained activity across every connected agent, newest first.</p></div>
+            <button id="close-trail" type="button" class="secondary-button">← Back to main dashboard</button>
+          </div>
+          <div class="trail-card">
+            <form id="trail-filters" class="trail-filter-grid"><label><span>Risk or activity</span><select id="trail-filter"></select></label><label><span>Harness</span><select id="trail-harness-filter"></select></label><label><span>From</span><input id="trail-date-from" type="date" /></label><label><span>Through</span><input id="trail-date-to" type="date" /></label><label class="trail-search"><span>Search redacted metadata</span><input id="trail-search" type="search" maxlength="120" placeholder="Destination, explanation, or harness" /></label><button class="primary-button" type="submit">Apply filters</button><button id="reset-trail-filters" class="secondary-button" type="button">Reset</button></form>
+            <div class="trail-results-bar"><p id="trail-page-status" class="trail-page-status" role="status" aria-live="polite"></p><div><button id="export-trail-csv" class="secondary-button" type="button">Export CSV</button><button id="export-trail-pdf" class="secondary-button" type="button">Export PDF</button></div></div>
+            <section id="trail-insights" class="trail-insights" aria-label="Activity insights"></section>
+            <div id="trail-events" class="summary-events trail-events"></div>
+            <nav class="trail-pagination" aria-label="Activity history pages"><button id="trail-newer" type="button" class="secondary-button">← Newer</button><button id="trail-older" type="button" class="secondary-button">Older →</button></nav>
+          </div>
+        </section>
+
+        <section id="protection-settings" class="protection-section">
+          <div class="section-heading">
+            <div><span class="label">PONO GUARD</span><h2>Choose what PonoLens protects</h2></div>
+            <span id="policy-status" class="save-status">Saved locally</span>
+          </div>
+          <p class="section-copy">Start with common categories, then add exact names, client codes, matter numbers, patient identifiers, or other values that must not leave your device unnoticed.</p>
+          <form id="policy-form" class="policy-card">
+            <fieldset>
+              <legend>Guard mode</legend>
+              <p class="field-help">Report Only is the stable default. Experimental prevention depends on the pre-submit controls exposed by each harness and may not intercept every action.</p>
+              <div class="choice-grid guard-mode-choices" role="radiogroup" aria-label="Pono Guard mode">
+                <label class="choice-card"><input type="radio" name="guard-mode" value="observe" /><strong>Report Only <span class="feature-state stable">Stable</span></strong><small>Allow matching prompts to continue and create a redacted privacy receipt for review.</small></label>
+                <label class="choice-card experimental-choice"><input type="radio" name="guard-mode" value="block_critical" /><strong>Block <span class="feature-state experimental">Experimental</span></strong><small>Attempt to stop matching prompts before submission for <span data-intercepting-harnesses></span>, then record what the adapter actually enforced.</small></label>
+                <label class="choice-card experimental-choice"><input type="radio" name="guard-mode" value="redact" /><strong>Redact <span class="feature-state experimental">Experimental</span></strong><small>Attempt to stop the sensitive original and provide a protected prompt for <span data-intercepting-harnesses></span>.</small></label>
+                <label id="custom-guard-mode" class="choice-card custom-choice" hidden><input type="radio" name="guard-mode" value="custom" /><strong>Custom <span class="feature-state custom">Advanced</span></strong><small>Your category actions use a custom combination. Open Advanced Guard to review or change them.</small></label>
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend>Additional visibility</legend>
+              <label class="switch-row experimental-setting"><span><strong>Agent command monitoring <span class="feature-state experimental">Experimental</span></strong><small>Report commands exposed by supported agent hooks. Command previews are redacted before local storage; sensitive commands appear under Needs Review. This does not monitor unrelated Terminal windows.</small></span><input type="checkbox" name="command-monitoring" /><i></i></label>
+            </fieldset>
+            <fieldset>
+              <legend>Common protections</legend>
+              <div id="common-protections"></div>
+            </fieldset>
+            <fieldset>
+              <legend>Your protected values</legend>
+              <p class="field-help">Use exact values for people, organizations, case names, patient IDs, project codenames, or anything unique to you. They remain in your local SQLite database.</p>
+              <div class="custom-entry">
+                <label><span>What is it?</span><input id="custom-label" placeholder="e.g. Patient name" maxlength="80" /></label>
+                <label><span>Exact value</span><input id="custom-value" placeholder="e.g. Jane Example" maxlength="500" /></label>
+                <button id="add-custom" type="button" class="secondary-button">Add</button>
+              </div>
+              <div id="custom-values" class="custom-values"></div>
+            </fieldset>
+            <div class="policy-footer">
+              <div class="compliance-note"><strong>Important:</strong> These controls can support privacy programs, but enabling a preset does not by itself make a system HIPAA-compliant or satisfy legal obligations.</div>
+              <span class="autosave-note">Changes save automatically</span>
+            </div>
+          </form>
+        </section>
+
+        <section id="advanced-guard" class="settings-section" aria-labelledby="advanced-title">
+          <div class="section-heading"><div><span class="label">ADVANCED PONO GUARD</span><h2 id="advanced-title">Fine-tune protection</h2></div><div class="settings-header-actions"><span id="advanced-status" class="save-status">Saved locally</span><button type="button" class="secondary-button" data-open-view="policies">Back to Pono Guard</button></div></div>
+          <p class="section-copy">These controls apply to every supported agent and Safe Prompt. Changes save automatically.</p>
+          <form id="advanced-policy-form" class="settings-card advanced-policy-form">
+            <fieldset><legend>Action by category</legend><p class="field-help"><strong>Report Only</strong> is stable and records without interruption. <strong>Redact</strong> and <strong>Block</strong> are experimental and operate only when a supported pre-submit hook runs. Safe Prompt substitutes tokens inside its own controlled workflow.</p><div id="category-actions" class="category-action-grid"></div></fieldset>
+            <fieldset><legend>Trusted destinations</legend><p class="field-help">One hostname per line. Subdomains are included. Trusted destinations avoid the untrusted-destination score but do not disable sensitive-data rules.</p><label class="field-label" for="trusted-destinations">Approved destination hostnames</label><textarea id="trusted-destinations" rows="5"></textarea></fieldset>
+            <fieldset><legend>Risk thresholds</legend><div class="threshold-grid"><label>Large transfer %<input id="threshold-large" type="number" /></label><label>Entire project %<input id="threshold-entire" type="number" /></label><label>Minimum project files<input id="threshold-files" type="number" /></label><label>Review score<input id="threshold-medium" type="number" /></label><label>High score<input id="threshold-high" type="number" /></label><label>Critical score<input id="threshold-critical" type="number" /></label></div></fieldset>
+            <fieldset><legend>Organization dictionaries</legend><p class="field-help">Add a named list; enter one exact value per line. Values remain in local policy storage.</p><div class="advanced-entry"><label><span>Dictionary name</span><input id="dictionary-label" placeholder="e.g. Client codes" maxlength="80" /></label><label><span>Protection category</span><select id="dictionary-category"></select></label><label><span>Protected values</span><textarea id="dictionary-values" rows="3" placeholder="One protected value per line"></textarea></label><button id="add-dictionary" type="button" class="secondary-button">Add dictionary</button></div><div id="dictionary-list" class="advanced-list"></div></fieldset>
+            <fieldset><legend>Custom regular-expression rules</legend><p class="field-help">Patterns run locally using a deliberately limited, group-free safety subset. Use character classes and bounded ranges; groups, alternation, backreferences, and unbounded quantifiers are rejected.</p><div class="advanced-entry regex-entry"><label><span>Rule name</span><input id="regex-label" placeholder="e.g. Matter number" maxlength="80" /></label><label><span>Protection category</span><select id="regex-category"></select></label><label><span>Safe pattern</span><input id="regex-pattern" placeholder="e.g. MAT-[0-9]{4,8}" maxlength="200" spellcheck="false" /></label><label><span>Flags</span><input id="regex-flags" value="gi" maxlength="6" aria-label="Regular expression flags" /></label><button id="add-regex" type="button" class="secondary-button">Add rule</button></div><div id="regex-list" class="advanced-list"></div><p id="regex-error" class="form-error" role="alert"></p></fieldset>
+            <div class="policy-footer"><span>Advanced policies are local and automatically applied to new events.</span><span class="autosave-note">Changes save automatically</span></div>
+          </form>
+        </section>
+
+        <section id="faq-section" class="faq-section" aria-labelledby="faq-title">
+          <div class="faq-hero">
+            <span class="label">HELP CENTER</span>
+            <h2 id="faq-title">Frequently asked questions</h2>
+            <p>Understand what PonoLens sees, what it can stop, and how to use each protection safely.</p>
+          </div>
+
+          <div class="faq-layout">
+            <section class="faq-group" aria-labelledby="faq-started">
+              <div class="faq-group-heading"><span aria-hidden="true">01</span><div><h3 id="faq-started">Getting started</h3><p>Install, connect, and test your agents.</p></div></div>
+              <details open><summary>What is PonoLens?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>PonoLens is a local-first privacy monitor and Safe Prompt workspace for AI coding agents. It creates plain-language privacy receipts, detects configured sensitive information, and can stop supported prompts before submission.</p></div></details>
+              <details><summary>How do I install and start PonoLens?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>Run <code>./install.sh</code> from the competition checkout. After the public installer is published, the documented one-line command will install the same local service. PonoLens opens <code>http://127.0.0.1:<span data-default-port></span></code> in your browser and must remain running while agents are monitored.</p></div></details>
+              <details><summary>How do I connect an AI agent?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>Select <strong>Scan agents</strong>, enable the installed harness, then fully quit and reopen it so its hook configuration reloads. Use <strong>Test</strong> and submit a fictitious test prompt.</p></div></details>
+              <details><summary>Which agents are supported?<span aria-hidden="true"></span></summary><div class="faq-answer"><p><span data-supported-harnesses></span> are supported with different coverage. Claude Desktop is not Claude Code and is not supported. Detection alone does not mean the compatible hook is active.</p></div></details>
+              <details><summary>Is PonoLens a native Mac application?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>Not in the competition preview. The current edition is installed with <code>install.sh</code>, runs a local service, and opens its dashboard in a browser. A polished PonoLens Personal Mac application is planned after the competition.</p></div></details>
+              <details><summary>How is PonoLens licensed?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>PonoLens Personal Edition is open source under the Apache License 2.0. You may use, modify, and distribute it subject to the license terms. The license does not grant rights to the PonoLens name or trademarks.</p></div></details>
+              <details><summary>What do the harness status fields mean?<span aria-hidden="true"></span></summary><div class="faq-answer"><ul><li><strong>Installed:</strong> the application or CLI was found.</li><li><strong>Hook configured:</strong> PonoLens configuration exists for that harness.</li><li><strong>Currently reachable:</strong> PonoLens is actively receiving supported activity.</li><li><strong>Prompt coverage:</strong> the prompt/actions exposed by that integration.</li><li><strong>Capabilities:</strong> whether the integration supports Report, Redact, or Block when its hook runs.</li><li><strong>Known limitations:</strong> activity the integration cannot reliably see or stop.</li><li><strong>Last event received:</strong> the newest matching retained receipt.</li></ul><p>Expand a harness accordion to see these details. Installed does not mean fully protected.</p></div></details>
+            </section>
+
+            <section class="faq-group" aria-labelledby="faq-protection">
+              <div class="faq-group-heading"><span aria-hidden="true">02</span><div><h3 id="faq-protection">Protection modes</h3><p>Know exactly what each Pono Guard option does.</p></div></div>
+              <details><summary>Which protection mode is stable?<span aria-hidden="true"></span></summary><div class="faq-answer"><p><strong>Report Only</strong> is the stable default. It lets the action continue and creates a redacted privacy receipt. A receipt cannot undo sensitive information that was already submitted.</p></div></details>
+              <details><summary>What does Experimental Block do?<span aria-hidden="true"></span></summary><div class="faq-answer"><p><strong>Block</strong> attempts to stop matching prompts at supported pre-submit hooks for <span data-intercepting-harnesses></span>. Coverage depends on the harness and hook. An event is red only when the integration actually stopped it; never treat the experimental setting as a universal prevention guarantee.</p></div></details>
+              <details><summary>What does Experimental Redact do?<span aria-hidden="true"></span></summary><div class="faq-answer"><p><strong>Redact</strong> detects sensitive information locally, creates a sanitized prompt, and attempts to stop the sensitive original at supported hooks. Review and resubmit the protected copy. Current third-party hooks do not provide one reliable cross-harness way to replace and submit composer text automatically.</p></div></details>
+              <details><summary>Why are Redact and Block marked Experimental?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>Agent harnesses expose different hooks, and those contracts can change. Experimental protection may miss activity or interrupt a supported workflow. Check each harness accordion for current prompt coverage, capabilities, known limitations, and the last event received. Use Safe Prompt whenever pre-submission interception is unavailable.</p></div></details>
+              <details><summary>When does Pono Guard show Custom?<span aria-hidden="true"></span></summary><div class="faq-answer"><p><strong>Custom · Advanced</strong> appears after category actions in Advanced Guard use a mixture that does not match the selected global Report Only, Block, or Redact mode. Selecting a standard mode applies that action to every category and removes the Custom state. Select Custom to return to Advanced Guard.</p></div></details>
+              <details><summary>What is Experimental command monitoring?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>It creates report-only receipts for commands exposed by supported agent hooks, such as shell, Git, package-manager, and network commands. It is off by default. PonoLens redacts detected secrets, credentials, personal information, and configured protected values before SQLite storage. A sensitive command is orange and appears under <strong>Needs Review</strong>. Command monitoring does not block or rewrite commands and does not monitor unrelated Terminal windows.</p></div></details>
+              <details data-feature="ollamaGateway" hidden><summary>Can PonoLens protect Ollama requests?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>Yes, when the calling application uses the PonoLens Ollama Gateway shown in Settings. Report Only forwards and records a redacted receipt. Block rejects matching requests before Ollama receives them. Redact removes configured protected values and forwards only non-streaming requests.</p></div></details>
+              <details data-feature="ollamaGateway" hidden><summary>What are the Ollama Gateway limitations?<span aria-hidden="true"></span></summary><div class="faq-answer"><ul><li>Direct calls to Ollama on port <code>11434</code> bypass PonoLens.</li><li>The MVP supports only <code>/api/chat</code>, <code>/api/generate</code>, and <code>/api/tags</code>, not Ollama's OpenAI-compatible, embeddings, model-management, or other APIs.</li><li>Report Only supports transparent streaming. A sensitive Redact request must use <code>stream:false</code>; streaming response re-identification is not supported.</li><li>The scanner covers textual chat content and generate prompt/system/suffix fields. It does not inspect images or every nested tool payload.</li><li>If PonoLens is stopped, applications configured only for its gateway cannot reach Ollama.</li></ul></div></details>
+              <details><summary>Do Block and Redact work in Codex side chats?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>No. Codex side-chat prompts are not exposed early enough for reliable interception. PonoLens may observe them afterward. Use <strong>Safe Prompt</strong> before sending sensitive Codex content.</p></div></details>
+              <details><summary>What do green, orange, and red mean?<span aria-hidden="true"></span></summary><div class="faq-answer"><ul><li><strong>Green:</strong> no configured sensitive information or unusual movement was detected.</li><li><strong>Orange:</strong> sensitive information was detected and needs review.</li><li><strong>Red:</strong> a supported adapter actually stopped the action.</li></ul></div></details>
+              <details><summary>Where do “Risks explained” and “Unsafe actions stopped” get their results?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>The counts and review panels query the complete retained SQLite history. They do not filter only the 20 events shown in the home-page preview. <strong>Risks explained</strong> includes retained high- and critical-severity events; <strong>Unsafe actions stopped</strong> includes events whose recorded decision is Blocked.</p></div></details>
+            </section>
+
+            <section class="faq-group" aria-labelledby="faq-safe-prompt">
+              <div class="faq-group-heading"><span aria-hidden="true">03</span><div><h3 id="faq-safe-prompt">Detection & Safe Prompt</h3><p>Protect identifiers before they leave your device.</p></div></div>
+              <details><summary>What sensitive information can PonoLens detect?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>Categories include secrets, personal and contact information, healthcare, legal, financial, and organization-defined values. Examples include emails, identity documents, patient identifiers, matter numbers, validated cards and routing numbers, and common API-key formats.</p></div></details>
+              <details><summary>Is sensitive-data detection perfect?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>No. Deterministic detection can produce false positives or miss unusual formats. Validation and contextual patterns reduce noise, but important decisions still require human review.</p></div></details>
+              <details><summary>What is Safe Prompt?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>Safe Prompt scans locally, replaces identifiers with tokens, lets you review the protected draft, and sends or copies only the tokenized version. PonoLens can restore the original values locally after the response returns.</p></div></details>
+              <details><summary>Does Safe Prompt send the original information?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>The initial scan and token map stay local. Only the reviewed tokenized prompt is sent or copied. Always inspect the remaining narrative because context can identify someone even after obvious identifiers are removed.</p></div></details>
+              <details><summary>Can I add company-specific identifiers?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>Yes. Add exact values in Pono Guard. Advanced Guard also supports local dictionaries and constrained regular-expression rules for client codes, matter formats, project names, and internal classifications.</p></div></details>
+            </section>
+
+            <section class="faq-group" aria-labelledby="faq-privacy">
+              <div class="faq-group-heading"><span aria-hidden="true">04</span><div><h3 id="faq-privacy">Data, privacy & compliance</h3><p>Understand storage, retention, and legal boundaries.</p></div></div>
+              <details><summary>Where are logs and settings stored?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>The default database is <code>~/.ponolens/ponolens.db</code>. Audit previews are redacted before storage. Policies and protected values stay in the local SQLite database; cloud synchronization is not enabled in this MVP.</p></div></details>
+              <details><summary>How long are events kept?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>The default is <span data-default-retention></span> days. Change it in <strong>Settings</strong> to match your organization's approved retention and legal-hold policies.</p></div></details>
+              <details><summary>What does the safe policy export include?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>It exports a reusable policy template while excluding user-authored labels, exact protected values, dictionary entries, and custom regular-expression patterns. It is intentionally not a raw backup of sensitive local policy data.</p></div></details>
+              <details><summary>What does “Delete all local data” remove?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>After typed confirmation, PonoLens deletes local audit events, policies, protected values, dictionaries, regex rules, and local settings. It does not remove harness hook configuration or macOS Keychain credentials. This action is permanent.</p></div></details>
+              <details><summary>What is included in CSV and PDF incident exports?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>Exports contain redacted event metadata for the active Data Trail filters. Prompt content, detector samples, and raw protected values are excluded. Export files are still security records and should follow your organization's storage and sharing policy.</p></div></details>
+              <details><summary>Does PonoLens establish HIPAA, legal, or SEC compliance?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>No. PonoLens supports privacy and compliance workflows but does not itself establish compliance, preserve privilege, satisfy SEC obligations, or provide certification. Those outcomes require organizational, contractual, and technical safeguards beyond this tool.</p></div></details>
+              <details><summary>Does deleting a sent prompt undo disclosure?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>No. Deletion does not prove that transmitted data was never processed, retained, backed up, or logged. Treat it as cleanup, not reversal of disclosure.</p></div></details>
+              <details><summary>What is a trusted destination?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>A trusted hostname lowers the untrusted-destination risk score. It never disables sensitive-data detection or per-category Pono Guard actions.</p></div></details>
+            </section>
+
+            <section class="faq-group" aria-labelledby="faq-troubleshooting">
+              <div class="faq-group-heading"><span aria-hidden="true">05</span><div><h3 id="faq-troubleshooting">Coverage & troubleshooting</h3><p>Resolve common monitoring and integration questions.</p></div></div>
+              <details><summary>What is MCP coverage?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>PonoLens covers MCP calls explicitly routed through its gateway or exposed through a supported harness hook. It does not claim visibility into every MCP server or encrypted network request.</p></div></details>
+              <details><summary>Which harness commands can PonoLens report?<span aria-hidden="true"></span></summary><div class="faq-answer"><ul><li><strong>Codex:</strong> commands found in covered task hooks and observable local session tool calls; unrelated Terminal commands are invisible.</li><li><strong>Claude Code CLI:</strong> command tools exposed through <code>PreToolUse</code>; Claude Desktop is unsupported.</li><li><strong>Cursor:</strong> command details exposed through its tool hooks; coverage and payload detail can vary by Cursor version and tool.</li><li><strong>Windsurf/Devin:</strong> native pre-command events and compatible pre-tool activity.</li></ul><p>Aliases, nested scripts, shell expansion, subprocesses, encrypted traffic, and commands that bypass the configured hook may hide the final operation or destination. Command output is not captured.</p></div></details>
+              <details><summary>How does Data Trail filtering work?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>Risk/activity, harness, date range, and redacted-metadata search can be combined. Filtering happens in SQLite before 100-event pagination, so it searches retained history rather than only the visible page. Daily summaries use the computer's local calendar day, and repeated-risk grouping uses matching retained results.</p></div></details>
+              <details><summary>What happens if the PonoLens collector is unavailable?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>Newly generated Cursor and Windsurf/Devin pre-submit bridges fail closed instead of silently allowing an unreviewed prompt. Reconnect an existing integration after upgrading to regenerate its bridge. Other coverage still depends on the behavior and hook contract of each harness.</p></div></details>
+              <details><summary>Why is an installed agent missing from Scan agents?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>The application or CLI may not be visible to the environment that started PonoLens. Restart that terminal or desktop app, confirm the executable is on <code>PATH</code>, and scan again.</p></div></details>
+              <details><summary>Why is an agent detected but showing no activity?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>Detection only proves the application or command exists. Confirm the integration is enabled, fully restart the harness, begin a new session, keep PonoLens running on the configured collector port, and submit a harmless test prompt.</p></div></details>
+              <details><summary>Why does Claude Code say “Configured only”?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>The hook configuration exists, but the Claude Code CLI is not visible to PonoLens. Confirm that <code>claude</code> is installed and on the launching environment's <code>PATH</code>. Claude Desktop does not satisfy this requirement.</p></div></details>
+              <details><summary>How should I test PonoLens safely?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>Use clearly fictitious names, emails, patient IDs, account numbers, and keys. Begin with stable Report Only, then test Experimental Redact and Block separately on a supported harness. Never use real regulated or authentication data merely to validate detection.</p></div></details>
+            </section>
+          </div>
+        </section>
+
+        <section id="appearance-settings" class="settings-section" aria-labelledby="settings-title">
+          <div class="section-heading">
+            <div><span class="label">SETTINGS</span><h2 id="settings-title">Appearance & accessibility</h2></div>
+            <div class="settings-header-actions"><span id="appearance-status" class="save-status" role="status" aria-live="polite">Saved on this device</span><button id="close-settings" type="button" class="secondary-button">Back to Live Lens</button></div>
+          </div>
+          <p class="section-copy">Choose a comfortable appearance. PonoLens saves these preferences only in this browser.</p>
+          <form id="appearance-form" class="settings-card">
+            <fieldset>
+              <legend>Audit-log retention</legend>
+              <p class="field-help">PonoLens deletes local activity events after this period. Choose a duration that matches your organization’s approved retention and legal-hold policies.</p>
+              <label class="retention-control" for="retention-days"><span>Keep audit events for</span><span><input id="retention-days" type="number" min="1" step="1" /> days</span><small>Default: <span data-default-retention></span> days. Protected values and raw secrets are not retained in the event log.</small></label>
+              <div class="model-settings-actions"><button id="save-retention" type="button" class="primary-button">Save retention</button><span id="retention-status" role="status" aria-live="polite"></span></div>
+            </fieldset>
+            <fieldset>
+              <legend>Local data management</legend>
+              <p class="field-help">Export a policy template without user-authored labels or raw protected values, or permanently remove PonoLens audit events, policies, protected values, and local settings.</p>
+              <div class="data-management-actions"><button id="export-policy" type="button" class="secondary-button">Export safe policy template</button><button id="open-delete-data" type="button" class="danger-outline-button">Delete all local data</button></div>
+              <p id="data-management-status" role="status" aria-live="polite"></p>
+            </fieldset>
+            <fieldset id="model-settings">
+              <legend>Default AI model</legend>
+              <p class="field-help">Safe Prompt sends only the tokenized version to this destination. API keys use an environment variable or macOS Keychain and are never stored in the audit database.</p>
+              <div class="provider-choices" role="radiogroup" aria-label="AI provider"></div>
+              <div class="model-config">
+                <label id="ollama-model-row"><span>Installed Ollama model</span><select id="ollama-model"></select><small id="ollama-status"></small></label>
+                <div id="openai-model-row" class="openai-config"><label><span>OpenAI model</span><input id="openai-model" /></label><label><span>OpenAI API key</span><input id="openai-api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Enter a new API key" aria-describedby="openai-status" /></label><div class="credential-actions"><button id="save-openai-key" type="button" class="secondary-button">Save key securely</button><button id="remove-openai-key" type="button" class="text-button">Remove saved key</button></div><small id="openai-status"></small></div>
+                <label id="webapp-row"><span>Web app</span><select id="webapp"></select><small>PonoLens copies the protected prompt; paste the reply back for restoration.</small></label>
+              </div>
+              <div class="model-settings-actions"><a href="https://ollama.com/download" target="_blank" rel="noreferrer">Install Ollama</a><button id="refresh-models" type="button" class="secondary-button">Refresh installed models</button><button id="save-llm-settings" type="button" class="primary-button">Save default model</button></div>
+              <p id="llm-settings-status" role="status" aria-live="polite"></p>
+              <div class="ollama-gateway-card" data-feature="ollamaGateway" hidden>
+                <strong>Ollama Gateway</strong>
+                <p>Point compatible apps to this base URL to apply Pono Guard before Ollama receives the request:</p>
+                <code id="ollama-gateway-url"></code>
+                <p id="ollama-gateway-status"></p>
+                <small>Only requests sent to this gateway are covered. Direct requests to Ollama bypass PonoLens. Supported routes: <code>GET /api/tags</code>, <code>POST /api/chat</code>, and <code>POST /api/generate</code>.</small>
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend>Color theme</legend>
+              <div class="choice-grid theme-choices">
+                <label class="choice-card"><input type="radio" name="theme" value="light" /><span class="choice-preview light-preview" aria-hidden="true"></span><strong>Light</strong><small>Bright background with dark text</small></label>
+                <label class="choice-card"><input type="radio" name="theme" value="dark" /><span class="choice-preview dark-preview" aria-hidden="true"></span><strong>Dark</strong><small>Low-light background with light text</small></label>
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend>Text size</legend>
+              <div class="choice-grid font-choices">
+                <label class="choice-card font-small"><input type="radio" name="font-size" value="small" /><strong>Small</strong><small>The original compact dashboard size</small></label>
+                <label class="choice-card font-regular"><input type="radio" name="font-size" value="regular" /><strong>Regular</strong><small>Recommended and selected by default</small></label>
+                <label class="choice-card font-large"><input type="radio" name="font-size" value="large" /><strong>Large</strong><small>More comfortable text and controls</small></label>
+              </div>
+            </fieldset>
+            <div class="settings-note"><strong>Accessibility:</strong> The interface supports keyboard navigation, visible focus, reduced motion, responsive reflow, and high-contrast themes. Formal ADA/WCAG conformance still requires testing and an accessibility audit.</div>
+          </form>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="warning-dialog">
+      <div class="warning-accent"></div>
+      <button class="dialog-close" aria-label="Close">×</button>
+      <div id="warning-symbol" class="warning-symbol">!</div>
+      <p id="warning-status" class="eyebrow danger-text">Pono Guard stopped this</p>
+      <h2 id="warning-title">This agent is uploading your entire project</h2>
+      <p id="warning-explanation" class="warning-copy"></p>
+      <div class="warning-route">
+        <div><small>FROM</small><strong id="warning-source"></strong></div>
+        <span>→</span>
+        <div><small>TO</small><strong id="warning-destination"></strong></div>
+      </div>
+      <div class="plain-box"><strong>Why this matters</strong><p id="warning-recommendation"></p></div>
+      <div id="detected-box" class="detected-box"><strong>Detected before redaction</strong><p id="detected-note" class="detected-note"></p><div id="detected-details"></div><strong class="preview-heading">Redacted audit-log preview</strong><p id="redacted-preview"></p></div>
+      <p id="event-timing" class="event-timing"></p>
+      <section id="guard-followup" class="guard-followup" hidden><strong>Prevent this type of information from being sent next time</strong><p id="guard-followup-copy"></p><button id="change-guard-settings" type="button" class="secondary-button">Change Pono Guard settings</button></section>
+      <section id="incident-response" class="incident-response" hidden>
+        <strong>Recommended response</strong>
+        <ol>
+          <li>Stop adding protected information to this conversation.</li>
+          <li>Delete the source chat and generated content from the provider, if your policy permits deletion.</li>
+          <li>Contact your privacy or security lead and preserve this redacted receipt.</li>
+          <li>Verify the provider, account configuration, safeguards, retention terms, and any required business associate agreement.</li>
+          <li>Document a breach-risk assessment and follow your notification procedure. Deletion is mitigation; it does not erase the disclosure.</li>
+        </ol>
+        <div class="mitigation-actions">
+          <button type="button" class="secondary-button" data-mitigation="source_deleted">I deleted the source chat</button>
+          <button type="button" class="secondary-button" data-mitigation="reported">I reported this incident</button>
+        </div>
+        <p id="mitigation-status" role="status" aria-live="polite"></p>
+      </section>
+      <details><summary>See technical details</summary><pre id="technical-details"></pre></details>
+      <div id="warning-actions" class="dialog-actions"><button id="copy-redacted" type="button" class="secondary-button" hidden>Copy redacted prompt</button><button id="receipt-close" type="button" class="primary-button">Close</button></div>
+      <p class="dialog-footnote">PonoLens stores this event locally. No raw secret values were retained.</p>
+    </dialog>
+
+    <dialog id="summary-dialog" class="summary-dialog" aria-labelledby="summary-title">
+      <button class="dialog-close summary-close" aria-label="Close">×</button>
+      <p id="summary-eyebrow" class="eyebrow">REVIEW</p>
+      <h2 id="summary-title">Risks explained</h2>
+      <p id="summary-copy" class="warning-copy"></p>
+      <div id="summary-events" class="summary-events"></div>
+      <div class="dialog-actions"><button id="summary-done" type="button" class="primary-button">Done</button></div>
+    </dialog>
+
+    <dialog id="llm-progress-dialog" class="progress-dialog" aria-labelledby="llm-progress-title">
+      <div class="progress-spinner" aria-hidden="true"></div>
+      <p class="eyebrow">DEFAULT LLM</p><h2 id="llm-progress-title">Generating a protected reply</h2>
+      <p id="llm-progress-status" class="warning-copy">Sending only the tokenized prompt…</p>
+      <div class="elapsed-time"><span>Elapsed time</span><strong id="llm-elapsed">0:00</strong></div>
+      <div class="dialog-actions"><button id="cancel-llm-request" type="button" class="secondary-button">Cancel request</button></div>
+    </dialog>
+
+    <dialog id="provider-dialog" class="summary-dialog provider-dialog" aria-labelledby="provider-dialog-title">
+      <button class="dialog-close provider-close" aria-label="Close">×</button>
+      <p class="eyebrow">SAFE PROMPT</p><h2 id="provider-dialog-title">Change default LLM</h2>
+      <p class="warning-copy">This changes only the destination. Your current safe prompt and local token mapping will not be cleared.</p>
+      <div class="quick-provider-choices"></div>
+      <div class="model-config quick-model-config">
+        <label id="quick-ollama-row"><span>Ollama model</span><select id="quick-ollama-model"></select></label>
+        <label id="quick-openai-row"><span>OpenAI model</span><input id="quick-openai-model" /></label>
+        <label id="quick-webapp-row"><span>Web app</span><select id="quick-webapp"></select></label>
+      </div>
+      <p id="quick-provider-status" role="status" aria-live="polite"></p>
+      <div class="dialog-actions"><button id="cancel-provider-change" type="button" class="secondary-button">Cancel</button><button id="save-provider-change" type="button" class="primary-button">Use this LLM</button></div>
+    </dialog>
+
+    <dialog id="delete-data-dialog" class="summary-dialog" aria-labelledby="delete-data-title">
+      <button class="dialog-close delete-data-close" aria-label="Close">×</button>
+      <p class="eyebrow danger-text">PERMANENT DELETION</p><h2 id="delete-data-title">Delete all local PonoLens data?</h2>
+      <p class="warning-copy">This permanently deletes audit events, policies, protected values, dictionaries, regex rules, and local settings. It does not remove harness configuration or macOS Keychain credentials.</p>
+      <label class="confirmation-field" for="delete-data-confirmation"><span>Type <strong>DELETE ALL LOCAL DATA</strong> to continue</span><input id="delete-data-confirmation" autocomplete="off" spellcheck="false" /></label>
+      <div class="dialog-actions"><button type="button" class="secondary-button delete-data-close">Cancel</button><button id="confirm-delete-data" type="button" class="danger-button" disabled>Delete permanently</button></div>
+    </dialog>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

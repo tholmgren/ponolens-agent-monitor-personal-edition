@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "protected-example": {
+      "command": "node",
+      "args": [
+        "/absolute/path/to/ponolens/src/adapters/mcp-proxy.mjs",
+        "--harness",
+        "cursor",
+        "--",
+        "your-upstream-mcp-command"
+      ]
+    }
+  }
+}
