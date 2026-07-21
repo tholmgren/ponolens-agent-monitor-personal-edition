@@ -886,12 +886,12 @@ function renderLlmSettings(data) {
 function updateSafeSendActions() {
   const provider = state.llmSettings?.settings?.provider;
   const webAppSelected = provider === "webapp";
-  const ollamaSelected = provider === "ollama";
+  const automaticProvider = provider === "ollama" || provider === "openai";
   $("#send-default-llm").hidden = webAppSelected;
-  $("#send-default-llm").textContent = ollamaSelected ? "Continue" : "Send to default LLM";
+  $("#send-default-llm").textContent = automaticProvider ? "Continue" : "Send to default LLM";
   $("#copy-tokenized").className = webAppSelected ? "primary-button" : "secondary-button";
   $("#next-to-reply").textContent = webAppSelected ? "Next" : "Next: paste reply";
-  $("#next-to-reply").hidden = ollamaSelected || (webAppSelected && !state.webAppReady);
+  $("#next-to-reply").hidden = automaticProvider || (webAppSelected && !state.webAppReady);
 }
 
 function updateQuickProviderRows() {
