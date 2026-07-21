@@ -196,6 +196,12 @@ h2 { margin: 2px 0 0; font-size: var(--text-title); letter-spacing: -.02em; }
 .activity-item.protected-event.blocked-event { border-color: color-mix(in srgb, var(--danger) 75%, var(--line)); background: color-mix(in srgb, var(--danger) 8%, var(--card)); }
 .activity-item.protected-event.blocked-event .activity-dot { background: var(--danger); color: white; }
 .activity-item.protected-event.blocked-event h3 { color: color-mix(in srgb, var(--danger) 78%, var(--ink)); }
+.activity-item.tone-review { border: 2px solid color-mix(in srgb, var(--warning) 72%, var(--line)); background: color-mix(in srgb, var(--warning) 9%, var(--card)); }
+.activity-item.tone-review .activity-dot { color: #241605; background: var(--warning); }
+.activity-item.tone-review h3 { color: color-mix(in srgb, var(--warning) 78%, var(--ink)); }
+.activity-item.tone-danger { border: 2px solid color-mix(in srgb, var(--danger) 75%, var(--line)); background: color-mix(in srgb, var(--danger) 8%, var(--card)); }
+.activity-item.tone-danger .activity-dot { color: white; background: var(--danger); }
+.activity-item.tone-danger h3 { color: color-mix(in srgb, var(--danger) 78%, var(--ink)); }
 .activity-empty { padding: 28px; border: 1px dashed var(--line); border-radius: 12px; text-align: center; color: var(--muted); }
 .activity-empty h3 { margin: 0 0 5px; color: var(--ink); }
 .activity-item h3 { margin: 0 0 4px; font-size: var(--text-body); }
@@ -308,6 +314,12 @@ details { font-size: var(--text-caption); color: var(--muted); } details summary
 .summary-event.protected { border-color: color-mix(in srgb, var(--warning) 70%, var(--line)); background: color-mix(in srgb, var(--warning) 8%, var(--card)); }
 .summary-event.protected.blocked { border-color: color-mix(in srgb, var(--danger) 75%, var(--line)); background: color-mix(in srgb, var(--danger) 8%, var(--card)); }
 .summary-event.protected.blocked .activity-dot { background: var(--danger); color: white; }
+.summary-event.tone-review { border: 2px solid color-mix(in srgb, var(--warning) 72%, var(--line)); background: color-mix(in srgb, var(--warning) 9%, var(--card)); }
+.summary-event.tone-review .activity-dot { color: #241605; background: var(--warning); }
+.summary-event.tone-review strong { color: color-mix(in srgb, var(--warning) 78%, var(--ink)); }
+.summary-event.tone-danger { border: 2px solid color-mix(in srgb, var(--danger) 75%, var(--line)); background: color-mix(in srgb, var(--danger) 8%, var(--card)); }
+.summary-event.tone-danger .activity-dot { color: white; background: var(--danger); }
+.summary-event.tone-danger strong { color: color-mix(in srgb, var(--danger) 78%, var(--ink)); }
 .summary-event strong, .summary-event small, .summary-event em { display: block; }
 .summary-event strong { font-size: var(--text-body); }
 .summary-event small { margin-top: 4px; color: var(--muted); font-size: var(--text-caption); }

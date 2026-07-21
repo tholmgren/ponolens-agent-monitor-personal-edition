@@ -14,8 +14,25 @@ import { isPathInside, readJsonBody, SECURITY_HEADERS } from "../src/http-securi
 import { Readable } from "node:stream";
 import { TokenVault } from "../src/token-vault.mjs";
 import { eventsCsv, eventsPdf } from "../src/report-export.mjs";
+import { cookieValue, LocalDashboardAuth } from "../src/local-auth.mjs";
 
 const root = resolve(new URL("..", import.meta.url).pathname);
+
+test("uses an owner-only install token to issue bounded dashboard sessions", () => {
+  const directory = mkdtempSync(join(tmpdir(), "ponolens-auth-"));
+  const tokenPath = join(directory, "dashboard-token");
+  const auth = new LocalDashboardAuth(tokenPath, { ttlMs: 1000, maxSessions: 1 });
+  assert.equal(statSync(tokenPath).mode & 0o777, 0o600);
+  assert.equal(auth.createSession("public-fixed-value"), null);
+  const token = readFileSync(tokenPath, "utf8").trim();
+  const first = auth.createSession(token, 1000);
+  assert.equal(auth.hasSession(first.id, 1500), true);
+  const second = auth.createSession(token, 1600);
+  assert.equal(auth.hasSession(first.id, 1600), false);
+  assert.equal(auth.hasSession(second.id, 2601), false);
+  assert.equal(cookieValue({ headers: { cookie: `other=1; ponolens_session=${second.id}` } }, "ponolens_session"), second.id);
+  assert.match(auth.cookie(second), /HttpOnly; SameSite=Strict/);
+});
 
 test("rejects malformed and oversized JSON request bodies", async () => {
   const malformed = Readable.from([Buffer.from("{")]); malformed.headers = {};
@@ -385,8 +402,8 @@ test("generated bridges use the configured collector address", () => {
   connectIntegration(project, "windsurf", "project", bridgeDataDir, collector);
   assert.match(readFileSync(join(project, ".cursor/ponolens-hook.mjs"), "utf8"), /127\.0\.0\.1:9876\/api\/hooks\/cursor/);
   assert.match(readFileSync(join(bridgeDataDir, "hooks/ponolens-windsurf-hook.mjs"), "utf8"), /127\.0\.0\.1:9876\/api\/hooks\/windsurf/);
-  assert.match(readFileSync(join(project, ".cursor/ponolens-hook.mjs"), "utf8"), /X-PonoLens-Request/);
-  assert.match(readFileSync(join(bridgeDataDir, "hooks/ponolens-windsurf-hook.mjs"), "utf8"), /X-PonoLens-Request/);
+  assert.doesNotMatch(readFileSync(join(project, ".cursor/ponolens-hook.mjs"), "utf8"), /PonoLens-Local/);
+  assert.doesNotMatch(readFileSync(join(bridgeDataDir, "hooks/ponolens-windsurf-hook.mjs"), "utf8"), /PonoLens-Local/);
   assert.match(readFileSync(join(project, ".cursor/ponolens-hook.mjs"), "utf8"), /continue: false/);
   assert.match(readFileSync(join(bridgeDataDir, "hooks/ponolens-windsurf-hook.mjs"), "utf8"), /exitCode = 2/);
 });

@@ -16,6 +16,7 @@ import { ollamaMetrics, ollamaPromptText, rewriteOllamaPrompt } from "./ollama-g
 import { isPathInside, readJsonBody, SECURITY_HEADERS } from "./http-security.mjs";
 import { TokenVault } from "./token-vault.mjs";
 import { eventsCsv, eventsPdf } from "./report-export.mjs";
+import { bearerToken, cookieValue, LocalDashboardAuth } from "./local-auth.mjs";
 import { HARNESS_CATALOG, PRODUCT_DEFAULTS, PROVIDER_CATALOG, collectorUrl, featureEnabled } from "../public/product-config.js";
 
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
@@ -38,7 +39,7 @@ const ollamaBaseUrl = String(process.env.PONOLENS_OLLAMA_URL || OLLAMA_PROVIDER.
 const OPENAI_PROVIDER = PROVIDER_CATALOG.modes.find((provider) => provider.id === "openai");
 const KEYCHAIN_SERVICE = "com.ponolens.openai-api-key";
 const KEYCHAIN_ACCOUNT = "ponolens";
-const LOCAL_REQUEST_HEADER = "x-ponolens-request";
+const dashboardAuth = new LocalDashboardAuth(join(dataDir, "dashboard-token"));
 const AUTO_START_LABEL = "com.ponolens.personal.autostart";
 const AUTO_START_PATH = join(homedir(), "Library", "LaunchAgents", `${AUTO_START_LABEL}.plist`);
 const getLlmSettings = () => ({ ...DEFAULT_LLM_SETTINGS, ...store.getSetting("llm_settings", DEFAULT_LLM_SETTINGS) });
@@ -156,8 +157,8 @@ const mime = {
   ".svg": "image/svg+xml",
 };
 
-function json(response, status, body) {
-  response.writeHead(status, { ...SECURITY_HEADERS, "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+function json(response, status, body, headers = {}) {
+  response.writeHead(status, { ...SECURITY_HEADERS, "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", ...headers });
   response.end(JSON.stringify(body));
 }
 
@@ -195,9 +196,9 @@ function validateLocalRequest(request) {
   if (request.headers["sec-fetch-site"] === "cross-site") return { status: 403, error: "Cross-site requests are not allowed" };
 
   const requestPath = String(request.url || "").split("?", 1)[0];
-  const protectedApiRequest = requestPath.startsWith("/api/") && !requestPath.startsWith("/api/hooks/");
-  if (protectedApiRequest && request.headers[LOCAL_REQUEST_HEADER] !== "PonoLens-Local") {
-    return { status: 403, error: "Missing PonoLens local request header" };
+  const protectedApiRequest = requestPath.startsWith("/api/") && !requestPath.startsWith("/api/hooks/") && requestPath !== "/api/session";
+  if (protectedApiRequest && !dashboardAuth.hasSession(cookieValue(request, "ponolens_session"))) {
+    return { status: 401, error: "Open PonoLens from its launcher to authenticate this dashboard" };
   }
   return null;
 }
@@ -303,6 +304,12 @@ const server = createServer(async (request, response) => {
     const rejected = validateLocalRequest(request);
     if (rejected) return json(response, rejected.status, { error: rejected.error });
     const url = new URL(request.url, `http://${request.headers.host}`);
+    if (request.method === "GET" && url.pathname === "/health") return json(response, 200, { ok: true });
+    if (request.method === "POST" && url.pathname === "/api/session") {
+      const session = dashboardAuth.createSession(bearerToken(request));
+      if (!session) return json(response, 401, { error: "Invalid PonoLens launcher credential" });
+      return json(response, 200, { authenticated: true, expiresAt: new Date(session.expiresAt).toISOString() }, { "Set-Cookie": dashboardAuth.cookie(session) });
+    }
     if (await proxyOllama(request, response, url)) return;
     const hookMatch = url.pathname.match(/^\/api\/hooks\/(cursor|windsurf)$/);
     if (request.method === "POST" && hookMatch) {
@@ -628,5 +635,6 @@ server.keepAliveTimeout = 5_000;
 
 server.listen(port, PRODUCT_DEFAULTS.host, () => {
   console.log(`PonoLens is running at ${collectorBaseUrl}`);
+  console.log("Open the dashboard with the PonoLens launcher.");
   console.log(`Local data: ${join(dataDir, "ponolens.db")}`);
 });

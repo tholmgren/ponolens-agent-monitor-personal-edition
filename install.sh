@@ -8,6 +8,7 @@ INSTALL_ROOT="${PONOLENS_INSTALL_DIR:-$HOME/.ponolens/application}"
 DATA_ROOT="${PONOLENS_DATA_DIR:-$HOME/.ponolens}"
 LOG_FILE="$DATA_ROOT/ponolens.log"
 PID_FILE="$DATA_ROOT/ponolens.pid"
+TOKEN_FILE="$DATA_ROOT/dashboard-token"
 PORT="${PORT:-4317}"
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" 2>/dev/null && pwd || pwd)
 LAUNCHER_ROOT="$HOME/Applications/PonoLens.app"
@@ -71,6 +72,21 @@ if [ -f "$PID_FILE" ]; then
   [ -z "$OLD_PID" ] || kill "$OLD_PID" 2>/dev/null || true
 fi
 
+# Upgrade collectors installed before the PID tracking existed. Never kill an
+# unrelated service that happens to use the configured port.
+PORT_PID=$(/usr/sbin/lsof -tiTCP:"$PORT" -sTCP:LISTEN 2>/dev/null | head -n 1 || true)
+if [ -n "$PORT_PID" ]; then
+  PORT_COMMAND=$(ps -p "$PORT_PID" -o command= 2>/dev/null || true)
+  case "$PORT_COMMAND" in
+    *src/server.mjs*)
+      kill "$PORT_PID" 2>/dev/null || fail "could not stop the previous PonoLens collector (PID $PORT_PID)"
+      WAIT_COUNT=0
+      while kill -0 "$PORT_PID" 2>/dev/null && [ "$WAIT_COUNT" -lt 10 ]; do sleep 1; WAIT_COUNT=$((WAIT_COUNT + 1)); done
+      ;;
+    *) fail "port $PORT is already used by another application; close it or set PORT to a free value" ;;
+  esac
+fi
+
 cd "$INSTALL_ROOT"
 PONOLENS_DATA_DIR="$DATA_ROOT" nohup node --experimental-sqlite src/server.mjs >>"$LOG_FILE" 2>&1 &
 PONOLENS_PID=$!
@@ -108,7 +124,13 @@ printf '%s\n' \
     'PID_FILE="$DATA_ROOT/ponolens.pid"' \
     'PORT="${PORT:-4317}"' \
     'DASHBOARD_URL="http://127.0.0.1:$PORT"' \
-    'if ! /usr/bin/curl -fsS -H "X-PonoLens-Request: PonoLens-Local" "$DASHBOARD_URL/api/state" >/dev/null 2>&1; then' \
+    'TOKEN_FILE="$DATA_ROOT/dashboard-token"' \
+    'if ! /usr/bin/curl -fsS "$DASHBOARD_URL/health" >/dev/null 2>&1; then' \
+    '  PORT_PID=$(/usr/sbin/lsof -tiTCP:"$PORT" -sTCP:LISTEN 2>/dev/null | head -n 1 || true)' \
+    '  if [ -n "$PORT_PID" ]; then' \
+    '    PORT_COMMAND=$(ps -p "$PORT_PID" -o command= 2>/dev/null || true)' \
+    '    case "$PORT_COMMAND" in *src/server.mjs*) kill "$PORT_PID" 2>/dev/null || true; sleep 1 ;; *) printf "%s\n" "Port $PORT is used by another application" >&2; exit 1 ;; esac' \
+    '  fi' \
     '  mkdir -p "$DATA_ROOT"' \
     '  chmod 700 "$DATA_ROOT"' \
     '  cd "$INSTALL_ROOT"' \
@@ -116,7 +138,11 @@ printf '%s\n' \
     '  printf "%s\\n" "$!" > "$PID_FILE"' \
     '  chmod 600 "$PID_FILE" "$LOG_FILE"' \
     'fi' \
-    '/usr/bin/open "$DASHBOARD_URL"'
+    'attempt=0' \
+    'while [ ! -s "$TOKEN_FILE" ] && [ "$attempt" -lt 10 ]; do sleep 1; attempt=$((attempt + 1)); done' \
+    '[ -s "$TOKEN_FILE" ] || { printf "%s\n" "PonoLens could not create its dashboard credential" >&2; exit 1; }' \
+    'DASHBOARD_TOKEN=$(tr -d "\\r\\n" < "$TOKEN_FILE")' \
+    '/usr/bin/open "$DASHBOARD_URL/#access=$DASHBOARD_TOKEN"'
 } > "$LAUNCHER_ROOT/Contents/MacOS/PonoLens"
 printf '%s\n' 'Created by the PonoLens installer.' > "$LAUNCHER_ROOT/Contents/Resources/ponolens-installer-receipt"
 chmod 755 "$LAUNCHER_ROOT/Contents/MacOS/PonoLens"
@@ -130,5 +156,10 @@ printf 'Redact and Block are experimental; Report Only is the stable default.\n'
 printf 'Open PonoLens from your user Applications folder to restart the service and dashboard later.\n'
 
 if [ "${PONOLENS_NO_OPEN:-0}" != "1" ]; then
-  if command -v open >/dev/null 2>&1; then open "http://127.0.0.1:$PORT"; fi
+  ATTEMPT=0
+  while [ ! -s "$TOKEN_FILE" ] && [ "$ATTEMPT" -lt 10 ]; do sleep 1; ATTEMPT=$((ATTEMPT + 1)); done
+  if command -v open >/dev/null 2>&1 && [ -s "$TOKEN_FILE" ]; then
+    DASHBOARD_TOKEN=$(tr -d '\r\n' < "$TOKEN_FILE")
+    open "http://127.0.0.1:$PORT/#access=$DASHBOARD_TOKEN"
+  fi
 fi

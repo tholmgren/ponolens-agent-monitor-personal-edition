@@ -189,7 +189,7 @@ for await (const chunk of process.stdin) chunks.push(chunk);
 try {
   const response = await fetch(${JSON.stringify(`${collectorBaseUrl}/api/hooks/cursor`)}, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "X-PonoLens-Request": "PonoLens-Local" },
+    headers: { "Content-Type": "application/json" },
     body: Buffer.concat(chunks),
     signal: AbortSignal.timeout(9000),
   });
@@ -226,7 +226,7 @@ for await (const chunk of process.stdin) chunks.push(chunk);
 try {
   const response = await fetch(${JSON.stringify(`${collectorBaseUrl}/api/hooks/windsurf`)}, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "X-PonoLens-Request": "PonoLens-Local" },
+    headers: { "Content-Type": "application/json" },
     body: Buffer.concat(chunks),
     signal: AbortSignal.timeout(9000),
   });

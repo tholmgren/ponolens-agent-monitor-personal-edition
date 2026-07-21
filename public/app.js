@@ -135,7 +135,6 @@ applyAppearance(getAppearance());
 
 async function request(path, options) {
   const headers = new Headers(options?.headers || {});
-  headers.set("X-PonoLens-Request", "PonoLens-Local");
   const response = await fetch(path, { ...options, headers });
   if (!response.ok) {
     const error = new Error((await response.json()).error || "Request failed");
@@ -146,7 +145,7 @@ async function request(path, options) {
 }
 
 async function downloadLocalFile(path, fallbackName) {
-  const response = await fetch(path, { headers: { "X-PonoLens-Request": "PonoLens-Local" } });
+  const response = await fetch(path);
   if (!response.ok) throw new Error((await response.json()).error || "Download failed");
   const blobUrl = URL.createObjectURL(await response.blob());
   const link = document.createElement("a");
@@ -200,14 +199,14 @@ function activityCard(event, trail = false) {
   const display = displayEvent(event);
   const identity = harnessIdentity(event.harness);
   const synthetic = isSyntheticEvent(event);
-  const card = `<button type="button" class="activity-item ${trail ? "trail-event " : ""}${event.action === "prompt" ? "prompt-event" : ""} ${hasProtectedInformation(event) ? "protected-event" : ""} ${event.decision === "blocked" ? "blocked-event" : ""}" ${trail ? `data-trail-event="${event.id}"` : `data-id="${event.id}"`} aria-label="View activity ${event.id}: ${escapeHtml(display.title)}"><div class="activity-dot ${event.severity}">${event.decision === "blocked" ? "!" : hasProtectedInformation(event) ? "?" : event.severity === "low" ? "✓" : "?"}</div><div><h3>${escapeHtml(display.title)}</h3><p>${escapeHtml(display.explanation)}</p></div><div class="activity-meta"><span class="harness-mark harness-${identity.className}" aria-hidden="true">${escapeHtml(identity.mark)}</span><span><strong>${escapeHtml(identity.label)}</strong><time datetime="${escapeHtml(new Date(event.createdAt).toISOString())}">${escapeHtml(trail ? formatEventDateTime(event.createdAt) : new Date(event.createdAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }))}</time></span></div></button>`;
+  const tone = activityTone(event);
+  const card = `<button type="button" class="activity-item tone-${tone} ${trail ? "trail-event " : ""}${event.action === "prompt" ? "prompt-event" : ""} ${hasProtectedInformation(event) ? "protected-event" : ""} ${event.decision === "blocked" ? "blocked-event" : ""}" ${trail ? `data-trail-event="${event.id}"` : `data-id="${event.id}"`} aria-label="View activity ${event.id}: ${escapeHtml(display.title)}"><div class="activity-dot ${event.severity}">${event.decision === "blocked" ? "!" : hasProtectedInformation(event) ? "?" : event.severity === "low" ? "✓" : "?"}</div><div><h3>${escapeHtml(display.title)}</h3><p>${escapeHtml(display.explanation)}</p></div><div class="activity-meta"><span class="harness-mark harness-${identity.className}" aria-hidden="true">${escapeHtml(identity.mark)}</span><span><strong>${escapeHtml(identity.label)}</strong><time datetime="${escapeHtml(new Date(event.createdAt).toISOString())}">${escapeHtml(trail ? formatEventDateTime(event.createdAt) : new Date(event.createdAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }))}</time></span></div></button>`;
   return synthetic ? `<div class="sample-event-shell">${card}<button type="button" class="sample-delete" data-delete-sample="${event.id}" aria-label="Delete sample event ${event.id}" title="Delete this sample"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5" /></svg></button></div>` : card;
 }
 
 function activityTone(event) {
-  if (event.decision === "blocked") return "danger";
+  if (event.decision === "blocked" || ["critical", "high"].includes(String(event.severity || "").toLowerCase())) return "danger";
   if (hasProtectedInformation(event)) return "review";
-  if (["critical", "high"].includes(String(event.severity || "").toLowerCase())) return "danger";
   if (event.decision === "approval_required" || String(event.severity || "").toLowerCase() === "medium" || isSyntheticEvent(event)) return "review";
   return "allowed";
 }
@@ -696,7 +695,7 @@ async function openSummary(type) {
   }
   $("#summary-events").innerHTML = events.length ? events.map((event) => {
     const display = displayEvent(event);
-    return `<button type="button" class="summary-event ${hasProtectedInformation(event) ? "protected" : ""} ${event.decision === "blocked" ? "blocked" : ""}" data-summary-event="${event.id}"><span class="activity-dot ${event.severity}">${event.decision === "blocked" ? "!" : "?"}</span><span><strong>${escapeHtml(display.title)}</strong><small>${escapeHtml(event.harness)} · ${new Date(event.createdAt).toLocaleString()}</small><em>${escapeHtml(display.explanation)}</em></span><b aria-hidden="true">›</b></button>`;
+    return `<button type="button" class="summary-event tone-${activityTone(event)} ${hasProtectedInformation(event) ? "protected" : ""} ${event.decision === "blocked" ? "blocked" : ""}" data-summary-event="${event.id}"><span class="activity-dot ${event.severity}">${event.decision === "blocked" ? "!" : "?"}</span><span><strong>${escapeHtml(display.title)}</strong><small>${escapeHtml(event.harness)} · ${new Date(event.createdAt).toLocaleString()}</small><em>${escapeHtml(display.explanation)}</em></span><b aria-hidden="true">›</b></button>`;
   }).join("") : `<div class="activity-empty"><h3>No items to review</h3><p>New qualifying events will appear here.</p></div>`;
   document.querySelectorAll("[data-summary-event]").forEach((button) => button.addEventListener("click", () => {
     $("#summary-dialog").close();
@@ -1545,7 +1544,15 @@ document.querySelectorAll("[data-mitigation]").forEach((button) => button.addEve
   }
 }));
 
-load().then(() => {
+async function authenticateFromLauncher() {
+  const token = new URLSearchParams(location.hash.slice(1)).get("access");
+  if (!token) return;
+  history.replaceState(null, "", `${location.pathname}${location.search}`);
+  const response = await fetch("/api/session", { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+  if (!response.ok) throw new Error((await response.json()).error || "PonoLens could not authenticate this dashboard");
+}
+
+authenticateFromLauncher().then(load).then(() => {
   if (localStorage.getItem(WELCOME_KEY) !== "true") showWelcome();
 }).catch((error) => {
   $("#activity").innerHTML = `<div class="activity-item"><div class="activity-dot high">!</div><div><h3>PonoLens could not start</h3><p>${escapeHtml(error.message)}</p></div></div>`;
