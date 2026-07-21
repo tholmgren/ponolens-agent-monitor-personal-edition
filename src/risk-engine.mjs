@@ -101,6 +101,7 @@ export function analyzeEvent(input, policy = {}) {
   }
   if (externalTransfer && !destinationTrusted) {
     score += 15;
+    score = Math.max(score, thresholds.medium);
     reasons.push("The destination is not on your trusted list.");
   }
 
@@ -128,12 +129,14 @@ export function analyzeEvent(input, policy = {}) {
   const observedPrompt = input.action === "prompt" && Boolean(input.destination) && !promptCanBeBlocked;
   const decision = commandReceipt
     ? sensitiveDetected ? "approval_required" : "allowed"
-    : !enforcementEnabled || observedPrompt
-    ? "allowed"
-    : preSubmitProtectedPrompt || severity === "critical" || untrustedHistoryTransfer
+    : enforcementEnabled && !observedPrompt && (preSubmitProtectedPrompt || severity === "critical" || untrustedHistoryTransfer)
     ? "blocked"
-    : severity === "high" || unfamiliarPersonalTransfer || protectedTransfer
+    : externalTransfer && !destinationTrusted
       ? "approval_required"
+      : !enforcementEnabled || observedPrompt
+        ? "allowed"
+        : severity === "high" || unfamiliarPersonalTransfer || protectedTransfer
+          ? "approval_required"
       : "allowed";
 
   let headline = "Activity looks normal";

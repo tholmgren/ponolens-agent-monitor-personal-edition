@@ -32,7 +32,31 @@ function gitTrackedCount(cwd) {
   }
 }
 
-function destinationFromText(text) {
+function hostnameFromTarget(target) {
+  const value = String(target || "").replace(/^["']|["',;}\\]+$/g, "");
+  if (!value) return null;
+  try { return new URL(value).hostname; } catch {}
+  const scpHost = value.match(/^(?:[^@\s]+@)?([\w.-]+):[^/]/)?.[1];
+  return scpHost || null;
+}
+
+function gitPushDestination(text, cwd) {
+  const value = String(text);
+  if (!/\bgit\s+push\b/i.test(value)) return null;
+  const match = value.match(/\bgit\s+push(?:\s+(?:--[\w-]+(?:=[^\s]+)?|-[A-Za-z]+))*\s+([^\s'"\\,;}]+)/i);
+  const remote = match?.[1] || "origin";
+  const directHost = hostnameFromTarget(remote);
+  if (directHost) return directHost;
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(remote)) return null;
+  try {
+    const remoteUrl = execFileSync("git", ["remote", "get-url", remote], { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+    return hostnameFromTarget(remoteUrl);
+  } catch { return null; }
+}
+
+function destinationFromText(text, cwd) {
+  const gitDestination = gitPushDestination(text, cwd);
+  if (gitDestination) return gitDestination;
   const url = String(text).match(/https?:\/\/[^\s'"}]+/i)?.[0];
   if (url) {
     try { return new URL(url).hostname; } catch { return url; }
@@ -74,13 +98,13 @@ export function normalizeHookEvent(raw, harness) {
       : typeof input.cmd === "string"
         ? input.cmd
         : "";
-  const cwd = raw.cwd || input.cwd || process.cwd();
+  const cwd = raw.cwd || input.cwd || input.workdir || process.cwd();
   const windsurfMcp = raw.agent_action_name === "pre_mcp_tool_use";
   const outbound = windsurfMcp || OUTBOUND_COMMAND.test(command) || /(?:send|upload|post|message|email|share|publish)/i.test(toolName);
   const repoArchive = REPO_ARCHIVE.test(command) || /(?:repo|repository).*(?:upload|sync)|(?:upload|sync).*(?:repo|repository)/i.test(serialized);
   const sensitive = SENSITIVE_PATH.test(command) || SENSITIVE_PATH.test(serialized);
   const trackedCount = repoArchive ? gitTrackedCount(cwd) : 0;
-  const candidateDestination = windsurfMcp ? `MCP server: ${input.mcp_server_name || "unknown"}` : outbound ? destinationFromText(`${command} ${serialized}`) : null;
+  const candidateDestination = windsurfMcp ? `MCP server: ${input.mcp_server_name || "unknown"}` : outbound ? destinationFromText(`${command} ${serialized}`, cwd) : null;
   const localDestination = candidateDestination && /^(localhost|127(?:\.\d{1,3}){3}|::1)$/i.test(candidateDestination);
   const destination = localDestination ? null : candidateDestination;
 
@@ -90,7 +114,7 @@ export function normalizeHookEvent(raw, harness) {
     action: outbound && !localDestination ? "network" : command ? "command" : "tool_call",
     source: repoArchive ? `Git repository: ${basename(cwd)}` : sensitive ? "Sensitive local data" : toolName,
     destination,
-    destinationTrust: destination && /^(api\.openai\.com|api\.anthropic\.com|github\.com)$/i.test(destination) ? "trusted" : destination ? "unknown" : "local",
+    destinationTrust: destination ? "unknown" : "local",
     repoFileCount: trackedCount,
     sentFileCount: repoArchive ? trackedCount : 0,
     includesGitHistory: /\.git|git\s+bundle/i.test(`${command} ${serialized}`),

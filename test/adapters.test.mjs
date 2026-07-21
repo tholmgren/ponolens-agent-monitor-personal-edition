@@ -81,6 +81,28 @@ test("normalizes Cursor MCP messaging calls", () => {
   assert.match(event.toolName, /send_email/);
 });
 
+test("resolves Git push remotes and flags untrusted destinations across harnesses", () => {
+  const directory = mkdtempSync(join(tmpdir(), "ponolens-git-remote-"));
+  assert.equal(spawnSync("git", ["init"], { cwd: directory }).status, 0);
+  assert.equal(spawnSync("git", ["remote", "add", "origin", "git@github.com:example/private-repo.git"], { cwd: directory }).status, 0);
+  for (const harness of ["codex", "claude-code", "cursor", "windsurf"]) {
+    const event = normalizeHookEvent({
+      hook_event_name: "PreToolUse",
+      tool_name: "Bash",
+      tool_input: {
+        command: 'const result = await tools.exec_command({cmd:"git push origin main", workdir:"/project"})',
+        workdir: directory,
+      },
+    }, harness);
+    assert.equal(event.destination, "github.com", harness);
+    assert.equal(event.destinationTrust, "unknown", harness);
+    const analysis = analyzeEvent(event, normalizePolicy({ ...DEFAULT_POLICY, trustedDestinations: [] }));
+    assert.equal(analysis.severity, "medium", harness);
+    assert.equal(analysis.decision, "approval_required", harness);
+    assert.match(analysis.explanation, /not on your trusted list/i, harness);
+  }
+});
+
 test("normalizes a real submitted prompt as outbound model data", () => {
   const event = normalizeHookEvent({
     session_id: "prompt-session",

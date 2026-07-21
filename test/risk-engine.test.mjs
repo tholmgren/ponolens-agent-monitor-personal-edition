@@ -65,14 +65,14 @@ test("detects then redacts common personal data and secrets", () => {
   assert.doesNotMatch(redacted, /sk-example/);
 });
 
-test("detects and redacts disabled categories without enforcing a block", () => {
+test("detects disabled categories and still reviews an untrusted destination", () => {
   const content = "Email person@example.com with sk-example1234567890";
   const policy = { presets: { secrets: false, contact: false } };
   const result = analyzeEvent({ harness: "cursor", action: "prompt", destination: "Cursor model provider", content, hookEvent: "beforeSubmitPrompt" }, policy);
   const redacted = redactContent(content, policy);
   assert.equal(result.findings.personal.length, 1);
   assert.equal(result.findings.secrets.length, 1);
-  assert.equal(result.decision, "allowed");
+  assert.equal(result.decision, "approval_required");
   assert.doesNotMatch(redacted, /person@example\.com|sk-example/);
 });
 
@@ -249,7 +249,7 @@ test("detects and redacts a contextual patient name and patient identifier", () 
   };
   const result = analyzeEvent(input, policy);
   const redacted = redactContent(input.content, policy);
-  assert.equal(result.decision, "allowed");
+  assert.equal(result.decision, "approval_required");
   assert.match(redacted, /\[REDACTED PATIENT NAME\]/);
   assert.match(redacted, /\[REDACTED PATIENT OR INSURANCE IDENTIFIER\]/);
   assert.doesNotMatch(redacted, /Tim Holmgren|001-222/);
