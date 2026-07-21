@@ -20,7 +20,7 @@ PonoLens combines three experiences:
 
 An opt-in **Agent command monitoring · Experimental** control adds report-only receipts for commands exposed by supported hooks. Sensitive commands are redacted before storage, displayed as caution events, and included in Needs Review without retaining command output.
 
-The Data Trail stores redacted receipts in owner-only local SQLite, supports combined database-wide filters, groups repeated risks, and exports redacted incident reports. Home-page risk and blocked-action review counts also open database-backed results rather than filtering only the newest preview.
+The Data Trail stores redacted receipts in owner-only local SQLite, supports combined database-wide filters, groups repeated risks, and exports redacted incident reports. Home-page risk and blocked-action review counts also open database-backed results rather than filtering only the newest preview. Judges can open the human-readable privacy receipt from any event on Live Lens or Data Trail; receipts are event details rather than a redundant navigation destination.
 
 ## Why it is different
 

@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { normalizeHookEvent, normalizeMcpCall, shouldRecordEvent } from "../src/adapters/event-normalizer.mjs";
 import { analyzeEvent, redactEventForStorage } from "../src/risk-engine.mjs";
-import { connectIntegration, detectIntegrations } from "../src/integrations.mjs";
+import { connectIntegration, detectIntegrations, sampleIntegrationEvent } from "../src/integrations.mjs";
 import { CodexSessionObserver } from "../src/adapters/codex-session-observer.mjs";
 import { EventStore } from "../src/store.mjs";
 import { DEFAULT_POLICY, normalizePolicy } from "../src/policy.mjs";
@@ -227,6 +227,17 @@ test("stores only redacted event content and exports no prompt preview", () => {
   assert.doesNotMatch(JSON.stringify(stored), /patient@example\.com|sk-test-/);
   assert.doesNotMatch(eventsCsv([stored]), /patient@example\.com|sk-test-/);
   assert.match(eventsPdf([stored]).subarray(0, 8).toString(), /%PDF-1\.4/);
+});
+
+test("creates a clearly labeled synthetic harness demo that stores only redacted data", () => {
+  const event = sampleIntegrationEvent(root, "cursor");
+  assert.equal(event.details.synthetic, true);
+  assert.match(event.details.notice, /No prompt was sent/i);
+  const analysis = analyzeEvent(event, DEFAULT_POLICY);
+  assert.ok(analysis.findings.personal.length > 0);
+  const storedEvent = redactEventForStorage(event, DEFAULT_POLICY);
+  assert.doesNotMatch(JSON.stringify(storedEvent), /alex@example\.invalid/i);
+  assert.match(JSON.stringify(storedEvent), /\[REDACTED EMAIL ADDRESS\]/i);
 });
 
 test("static asset containment rejects siblings, traversal, and dotfiles", () => {

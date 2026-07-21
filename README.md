@@ -53,9 +53,11 @@ No seed database or external dataset is required. PonoLens creates its local SQL
 
    A supported observed submission should create an orange **Needs Review** receipt with protected categories and redacted stored details.
 5. Open **Safe Prompt**, paste the same fictional prompt, continue through the wizard, and confirm that identifiers become local tokens before copying or sending the protected version.
-6. Open **Data Trail** to filter the receipts and export a redacted incident report.
+6. Open **Data Trail** to filter the receipts and export a redacted incident report. Select any event on Live Lens or Data Trail to open its human-readable privacy receipt; receipts are event details, not a separate navigation screen.
 
 Experimental Block and Redact should be tested only with fictional data and only after reviewing the harness capability and limitation shown in **Agent status**. A red receipt means the compatible pre-submit adapter actually stopped the action; PonoLens does not label post-submission observation as blocked.
+
+For a deterministic judge preview, expand any configured harness under **Installed harnesses**, then use the **Test Harness** controls. **Test connection** checks the configured adapter without promising a Pono Trail receipt. **Test event** adds one orange, clearly labeled synthetic receipt through the normal detector, redaction, SQLite, Needs Review, and detail-view pipeline. It uses only fictional data and does not contact the harness or a model provider.
 
 ## How GPT-5.6 and Codex accelerated the build
 
@@ -95,6 +97,7 @@ The detailed judging narrative and three-minute demonstration sequence are also 
 - Provides combined harness/risk/date/search filters, daily and repeated-risk summaries, and database-backed pagination
 - Exports redacted CSV/PDF incident reports without prompt content or detector samples
 - Shows separate installed, configured, reachable, coverage, capability, limitation, and last-event status in compact harness accordions that remain open during live refreshes
+- Provides visible, separate **Test connection** and **Test event** controls for configured harnesses so judges can distinguish adapter health from a synthetic trail preview
 - Loads **Risks explained** and **Unsafe actions stopped** review lists from the complete retained database, not only the home-page preview
 - Provides a local Safe Prompt wizard that tokenizes identifiers before a prompt is copied or sent
 - Restores protected values locally after the user pastes an AI response back into the wizard
@@ -179,7 +182,9 @@ Settings also provides a safe policy-template export that excludes user-authored
 
 Open the **FAQ** tab in the dashboard for categorized, expandable answers about stable Report Only behavior, Experimental Block/Redact limitations, supported agents, Safe Prompt, local storage, retention, compliance limitations, MCP coverage, testing, and troubleshooting.
 
-The home page shows only the newest activity preview. Its **Risks explained** and **Unsafe actions stopped** counts and review panels query all retained events. **Data Trail** is the full-history workspace: filters run against SQLite before pagination, and combined filters, summaries, search, and exports therefore apply beyond the currently visible 100 rows.
+The home page (**Live Lens**) shows only the newest activity preview. Its **Risks explained** and **Unsafe actions stopped** counts and review panels query all retained events. **Data Trail** is the full-history workspace: filters run against SQLite before pagination, and combined filters, summaries, search, and exports therefore apply beyond the currently visible 100 rows. A privacy receipt is the plain-language detail view opened from an event in either workspace; it is not a separate top-level destination.
+
+In **Settings → Default AI model**, provider, model, and web-app changes save automatically. OpenAI model text uses a short typing delay before saving. API-key storage remains a separate explicit Keychain action so a partially entered credential is never saved accidentally.
 
 ## Development
 

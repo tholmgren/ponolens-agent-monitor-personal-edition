@@ -8,7 +8,7 @@ import { randomUUID } from "node:crypto";
 import { analyzeEvent, redactContent, redactEventForStorage, restoreTokens, tokenizeContent } from "./risk-engine.mjs";
 import { EventStore } from "./store.mjs";
 import { DEFAULT_POLICY, normalizePolicy } from "./policy.mjs";
-import { connectIntegration, detectIntegrations, testIntegration } from "./integrations.mjs";
+import { connectIntegration, detectIntegrations, sampleIntegrationEvent, testIntegration } from "./integrations.mjs";
 import { CodexSessionObserver } from "./adapters/codex-session-observer.mjs";
 import { normalizeHookEvent, shouldRecordEvent } from "./adapters/event-normalizer.mjs";
 import { ollamaMetrics, ollamaPromptText, rewriteOllamaPrompt } from "./ollama-gateway.mjs";
@@ -336,7 +336,7 @@ const server = createServer(async (request, response) => {
       response.end(payload); return;
     }
 
-    const integrationMatch = url.pathname.match(/^\/api\/integrations\/([^/]+)\/(connect|test)$/);
+    const integrationMatch = url.pathname.match(/^\/api\/integrations\/([^/]+)\/(connect|test|sample)$/);
     if (request.method === "POST" && integrationMatch) {
       const [, id, operation] = integrationMatch;
       const body = await readJsonBody(request);
@@ -345,6 +345,22 @@ const server = createServer(async (request, response) => {
         if (operation !== "test") return json(response, 400, { error: "The Ollama Gateway is built into PonoLens and does not require installation" });
         const ollama = await ollamaModels();
         return json(response, 200, { ok: ollama.running, message: ollama.running ? `Ollama Gateway reached ${ollama.models.length} installed model${ollama.models.length === 1 ? "" : "s"}.` : "PonoLens could not reach Ollama. Start Ollama and test again.", integrations: [...detectIntegrations(root), ollamaGatewayIntegration(ollama)] });
+      }
+      if (operation === "sample") {
+        const policy = getPolicy();
+        const event = sampleIntegrationEvent(root, id);
+        const detected = analyzeEvent(event, policy);
+        const analysis = {
+          ...detected,
+          score: Math.max(detected.score, PRODUCT_DEFAULTS.thresholds.medium),
+          severity: "medium",
+          decision: "approval_required",
+          headline: `Synthetic judge demo · ${HARNESS_CATALOG[id]?.name || id}`,
+          explanation: "PonoLens processed fictional sensitive information through its normal detector and redacted audit pipeline. No prompt was sent to the harness or a model provider by this test.",
+          recommendation: "Open this clearly labeled sample receipt to review the detected categories, redacted details, and Pono Trail experience.",
+        };
+        const saved = store.add(redactEventForStorage(event, policy), analysis);
+        return json(response, 201, { ok: true, eventId: saved.id, message: `Created synthetic Pono Trail event #${saved.id}. No prompt was sent. Open Pono Trail and select Needs Review to view it.`, integrations: await integrationSnapshot() });
       }
       const result = operation === "connect" ? connectIntegration(root, id, body.scope || "project", dataDir, collectorBaseUrl) : testIntegration(root, id, dataDir);
       return json(response, 200, { ...result, integrations: await integrationSnapshot() });

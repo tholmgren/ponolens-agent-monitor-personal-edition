@@ -67,6 +67,8 @@ Runtime defaults, provider definitions, and harness metadata are maintained cent
 
 Use **Pono Guard** for the common category switches. **Report Only** is the stable default. **Redact** and **Block** are Experimental: they operate only when supported Cursor, Claude Code CLI, or Windsurf/Devin pre-submit hooks run, and they are not universal prevention guarantees. Redact attempts to stop a sensitive original and provides a sanitized prompt for review and resubmission. Use **Advanced Guard** to set the same actions per category, trusted destinations, thresholds, dictionaries, and constrained regular-expression rules. Settings save automatically.
 
+**Live Lens** shows current status and the newest activity. **Data Trail** provides searchable retained history. Select an event in either view to open its plain-language privacy receipt; there is no separate Privacy Receipts navigation screen. In **Settings → Default AI model**, provider, model, and web-app selections also save automatically. Saving or removing an OpenAI API key remains an explicit macOS Keychain action.
+
 **Agent command monitoring · Experimental** is a separate Pono Guard switch and is off by default. When enabled, it creates report-only receipts for commands exposed by supported hooks. Sensitive command previews are redacted before SQLite storage, shown in orange, and included in **Needs Review**. PonoLens does not capture command output or commands from unrelated Terminal windows.
 
 ## Connect an agent from the dashboard
@@ -75,10 +77,11 @@ Use **Pono Guard** for the common category switches. **Report Only** is the stab
 2. Confirm the expected CLI/application is detected.
 3. Select **Enable system-wide** for the agent you want to monitor.
 4. Fully quit and reopen that agent so it reloads its hook configuration.
-5. Return to PonoLens and select **Test**.
-6. Submit a harmless test prompt and confirm a new event appears under **What your agents are doing**.
+5. Return to PonoLens, expand the configured harness, and select **Test connection** to verify the adapter.
+6. Under **Test Harness**, select **Test event** to add a clearly labeled synthetic receipt without sending anything to the harness or a model provider.
+7. For a real end-to-end check, submit a harmless prompt in the harness and confirm a new event appears under **What your agents are doing**.
 
-Each harness appears as a collapsed status accordion. Its header shows the current monitoring state, setup scope, and latest event time. Expand it to review installation, hook configuration, current reachability, prompt coverage, stable Report capability, Experimental Redact/Block capability, known limitations, and testing controls. The selected accordion remains open during live dashboard refreshes.
+Each harness appears as a collapsed status accordion. Its header shows the current monitoring state, setup scope, latest event time, and whether tests are available. Expand it to review installation, hook configuration, current reachability, prompt coverage, stable Report capability, Experimental Redact/Block capability, known limitations, and the separate **Test Harness** controls. **Test connection** verifies adapter health. **Test event** uses fictional sensitive data to exercise the normal detector, redaction, local storage, Needs Review, and receipt UI; it is synthetic and does not prove real harness coverage. The selected accordion remains open during live dashboard refreshes.
 
 Command coverage differs by harness:
 

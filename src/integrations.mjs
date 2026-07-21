@@ -305,3 +305,23 @@ export function testIntegration(root, id, dataDir) {
   });
   return { ok: result.status === 0, message: result.status === 0 ? `${DEFINITIONS[id].name} adapter responded successfully. Ordinary command receipts are retained only when Experimental command monitoring is enabled.` : "Adapter test failed.", error: result.stderr?.trim() || null };
 }
+
+export function sampleIntegrationEvent(root, id) {
+  const definition = DEFINITIONS[id];
+  if (!definition) throw new Error("Unknown harness");
+  return {
+    harness: id,
+    action: "prompt",
+    hookEvent: "ponolens_synthetic_demo",
+    source: "PonoLens judge demo · synthetic",
+    destination: `Simulated ${definition.modelDestination || `${definition.name} provider`}`,
+    destinationTrust: "unknown",
+    content: "Synthetic demo only: draft a follow-up for demo patient Alex Example, patient ID DEMO-001, email alex@example.invalid, with high blood pressure.",
+    details: {
+      synthetic: true,
+      generatedBy: "PonoLens judge demo",
+      notice: "No prompt was sent to this harness or model provider by this test.",
+      cwd: root,
+    },
+  };
+}

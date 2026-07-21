@@ -25,7 +25,6 @@
           <button class="nav-item" data-view="trail"><span>⌁</span> Data Trail</button>
           <button class="nav-item" data-view="policies"><span>◇</span> Pono Guard</button>
           <button class="nav-item" data-view="advanced"><span>⌘</span> Advanced Guard</button>
-          <button class="nav-item" data-view="receipts"><span>▤</span> Privacy Receipts</button>
           <button class="nav-item" data-view="faq"><span>?</span> FAQ</button>
           <button class="nav-item" data-view="settings"><span>⚙</span> Settings</button>
         </nav>
@@ -181,8 +180,10 @@
             <section class="faq-group" aria-labelledby="faq-started">
               <div class="faq-group-heading"><span aria-hidden="true">01</span><div><h3 id="faq-started">Getting started</h3><p>Install, connect, and test your agents.</p></div></div>
               <details open><summary>What is PonoLens?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>PonoLens is a local-first privacy monitor and Safe Prompt workspace for AI coding agents. It creates plain-language privacy receipts, detects configured sensitive information, and can stop supported prompts before submission.</p></div></details>
+              <details><summary>Where do I find privacy receipts?<span aria-hidden="true"></span></summary><div class="faq-answer"><p><strong>Live Lens</strong> shows the newest activity and current protection status. <strong>Data Trail</strong> is the searchable history of retained events. Select an event in either place to open its human-readable privacy receipt, including what happened, detected categories, destination, decision, redacted details, and recommended next steps. Privacy Receipts is not a separate navigation screen.</p></div></details>
               <details><summary>How do I install and start PonoLens?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>Run <code>./install.sh</code> from the competition checkout. After the public installer is published, the documented one-line command will install the same local service. PonoLens opens <code>http://127.0.0.1:<span data-default-port></span></code> in your browser and must remain running while agents are monitored.</p></div></details>
-              <details><summary>How do I connect an AI agent?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>Select <strong>Scan agents</strong>, enable the installed harness, then fully quit and reopen it so its hook configuration reloads. Use <strong>Test</strong> and submit a fictitious test prompt.</p></div></details>
+              <details><summary>How do I connect and test an AI agent?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>Select <strong>Scan agents</strong>, enable the installed harness, then fully quit and reopen it so its hook configuration reloads. Expand the harness and use the <strong>Test Harness</strong> controls. <strong>Test connection</strong> verifies the adapter. <strong>Test event</strong> adds one clearly labeled synthetic receipt made from fictional data. The test event does not contact the harness or a model provider and must not be treated as proof of real traffic coverage.</p></div></details>
+              <details><summary>What is the difference between the two Test Harness buttons?<span aria-hidden="true"></span></summary><div class="faq-answer"><p><strong>Test connection</strong> checks whether the configured adapter responds. It may not create a retained trail item. <strong>Test event</strong> deliberately creates one orange synthetic event through the normal detector, redaction, SQLite, Needs Review, and receipt-detail pipeline. It is always labeled as a demo and sends no prompt externally.</p></div></details>
               <details><summary>Which agents are supported?<span aria-hidden="true"></span></summary><div class="faq-answer"><p><span data-supported-harnesses></span> are supported with different coverage. Claude Desktop is not Claude Code and is not supported. Detection alone does not mean the compatible hook is active.</p></div></details>
               <details><summary>Is PonoLens a native Mac application?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>Not in the competition preview. The current edition is installed with <code>install.sh</code>, runs a local service, and opens its dashboard in a browser. A polished PonoLens Personal Mac application is planned after the competition.</p></div></details>
               <details><summary>How is PonoLens licensed?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>PonoLens Personal Edition is open source under the Apache License 2.0. You may use, modify, and distribute it subject to the license terms. The license does not grant rights to the PonoLens name or trademarks.</p></div></details>
@@ -268,7 +269,7 @@
                 <div id="openai-model-row" class="openai-config"><label><span>OpenAI model</span><input id="openai-model" /></label><label><span>OpenAI API key</span><input id="openai-api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Enter a new API key" aria-describedby="openai-status" /></label><div class="credential-actions"><button id="save-openai-key" type="button" class="secondary-button">Save key securely</button><button id="remove-openai-key" type="button" class="text-button">Remove saved key</button></div><small id="openai-status"></small></div>
                 <label id="webapp-row"><span>Web app</span><select id="webapp"></select><small>PonoLens copies the protected prompt; paste the reply back for restoration.</small></label>
               </div>
-              <div class="model-settings-actions"><a href="https://ollama.com/download" target="_blank" rel="noreferrer">Install Ollama</a><button id="refresh-models" type="button" class="secondary-button">Refresh installed models</button><button id="save-llm-settings" type="button" class="primary-button">Save default model</button></div>
+              <div class="model-settings-actions"><a href="https://ollama.com/download" target="_blank" rel="noreferrer">Install Ollama</a><button id="refresh-models" type="button" class="secondary-button">Refresh installed models</button><span class="autosave-note">Changes save automatically</span></div>
               <p id="llm-settings-status" role="status" aria-live="polite"></p>
               <div class="ollama-gateway-card" data-feature="ollamaGateway" hidden>
                 <strong>Ollama Gateway</strong>
@@ -298,6 +299,12 @@
         </section>
       </main>
     </div>
+
+    <aside id="harness-toast" class="harness-toast" role="status" aria-live="polite" aria-atomic="true" hidden>
+      <div class="harness-toast-icon" aria-hidden="true">✓</div>
+      <div class="harness-toast-copy"><strong id="harness-toast-title">Test complete</strong><p id="harness-toast-message"></p></div>
+      <button id="harness-toast-close" type="button" aria-label="Close test result">×</button>
+    </aside>
 
     <dialog id="warning-dialog">
       <div class="warning-accent"></div>

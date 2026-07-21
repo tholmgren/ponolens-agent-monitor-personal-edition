@@ -1,7 +1,7 @@
 import { scanContent } from "./detectors.js";
 import { HARNESS_CATALOG, PRODUCT_DEFAULTS, PROTECTION_CATEGORIES, PROVIDER_CATALOG, featureEnabled, harnessFor } from "./product-config.js";
 
-const state = { events: [], selected: null, activityFilter: "all", trailFilter: "all", trailHarness: "all", trailOffset: 0, openIntegration: null, roundTripId: null, localTokenMapping: {}, draftAliases: {}, localVaultTimer: null, localScan: null, originalFindings: [], promptCopied: false, llmController: null, llmTimer: null, llmSettings: null, policyDirty: false, policySaveTimer: null, policySaveVersion: 0, policy: { presets: {}, customValues: [] } };
+const state = { events: [], selected: null, activityFilter: "all", trailFilter: "all", trailHarness: "all", trailOffset: 0, openIntegration: null, roundTripId: null, localTokenMapping: {}, draftAliases: {}, localVaultTimer: null, localScan: null, originalFindings: [], promptCopied: false, llmController: null, llmTimer: null, llmSettings: null, llmSaveTimer: null, llmSaveVersion: 0, policyDirty: false, policySaveTimer: null, policySaveVersion: 0, toastTimer: null, policy: { presets: {}, customValues: [] } };
 const $ = (selector) => document.querySelector(selector);
 const APPEARANCE_KEY = "ponolens-appearance";
 const THRESHOLD_INPUTS = Object.freeze([
@@ -60,7 +60,11 @@ async function request(path, options) {
   const headers = new Headers(options?.headers || {});
   headers.set("X-PonoLens-Request", "PonoLens-Local");
   const response = await fetch(path, { ...options, headers });
-  if (!response.ok) throw new Error((await response.json()).error || "Request failed");
+  if (!response.ok) {
+    const error = new Error((await response.json()).error || "Request failed");
+    error.status = response.status;
+    throw error;
+  }
   return response.json();
 }
 
@@ -73,6 +77,24 @@ async function downloadLocalFile(path, fallbackName) {
   link.download = (response.headers.get("content-disposition")?.match(/filename="([^"]+)"/) || [])[1] || fallbackName;
   document.body.append(link); link.click(); link.remove();
   setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+}
+
+function closeHarnessToast() {
+  clearTimeout(state.toastTimer);
+  state.toastTimer = null;
+  $("#harness-toast").hidden = true;
+}
+
+function showHarnessToast({ title, message, tone = "success" }) {
+  const toast = $("#harness-toast");
+  clearTimeout(state.toastTimer);
+  toast.className = `harness-toast ${tone}`;
+  toast.setAttribute("role", tone === "error" ? "alert" : "status");
+  $("#harness-toast-title").textContent = title;
+  $("#harness-toast-message").textContent = message;
+  $(".harness-toast-icon").textContent = tone === "error" ? "!" : tone === "warning" ? "?" : "✓";
+  toast.hidden = false;
+  state.toastTimer = setTimeout(closeHarnessToast, 8000);
 }
 
 function escapeHtml(value) {
@@ -224,7 +246,7 @@ function renderIntegrations(integrations) {
   const yesNo = (value) => `<span class="coverage-value ${value ? "yes" : "no"}">${value ? "Yes" : "No"}</span>`;
   $("#integrations").innerHTML = visible.map((item) => `
     <details class="integration" data-integration-id="${escapeHtml(item.id)}" ${state.openIntegration === item.id ? "open" : ""}>
-      <summary><span class="integration-icon">${escapeHtml(harnessFor(item.id)?.mark || item.name.slice(0, 2).toUpperCase())}</span><span class="integration-summary-copy"><strong>${escapeHtml(item.name)}</strong><small>${item.monitoring ? "Monitoring enabled" : item.installed ? "Installed, not fully protected" : "Not detected"}${item.lastEvent ? ` · Last event ${new Date(item.lastEvent.createdAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : " · No events yet"}</small></span><span class="integration-summary-meta"><span class="scope-badge ${item.monitoring ? (item.globalConfigured ? "global" : "project") : "detected"}">${item.monitoring ? (item.globalConfigured ? "System-wide" : "This project") : item.hookConfigured ? "Configured only" : item.installed ? "Detected" : "Unavailable"}</span><span class="integration-chevron" aria-hidden="true"></span></span></summary>
+      <summary><span class="integration-icon">${escapeHtml(harnessFor(item.id)?.mark || item.name.slice(0, 2).toUpperCase())}</span><span class="integration-summary-copy"><strong>${escapeHtml(item.name)}</strong><small>${item.monitoring ? "Monitoring enabled · Test Harness available" : item.installed ? "Installed, not fully protected" : "Not detected"}${item.lastEvent ? ` · Last event ${new Date(item.lastEvent.createdAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : " · No events yet"}</small></span><span class="integration-summary-meta"><span class="scope-badge ${item.monitoring ? (item.globalConfigured ? "global" : "project") : "detected"}">${item.monitoring ? (item.globalConfigured ? "System-wide" : "This project") : item.hookConfigured ? "Configured only" : item.installed ? "Detected" : "Unavailable"}</span><span class="integration-chevron" aria-hidden="true"></span></span></summary>
       <div class="coverage-grid">
         <div><span>Installed</span>${yesNo(item.installed)}</div><div><span>Hook configured</span>${yesNo(item.hookConfigured)}</div><div><span>Currently reachable</span>${yesNo(item.reachable)}</div>
         <div class="coverage-wide"><span>Prompt coverage</span><strong>${escapeHtml(item.promptCoverage || item.coverage)}</strong></div>
@@ -232,11 +254,12 @@ function renderIntegrations(integrations) {
         <div class="coverage-wide"><span>Known limitations</span><strong>${escapeHtml(item.limitation || "Coverage depends on events exposed by this harness.")}</strong></div>
         <div class="coverage-wide"><span>Last event received</span><strong>${item.lastEvent ? `${new Date(item.lastEvent.createdAt).toLocaleString()} · event #${item.lastEvent.id}` : "No event received yet"}</strong></div>
       </div>
-      <div class="integration-actions">${item.monitoring ? `<button class="mini-button" data-test-agent="${item.id}">Test connection</button>` : item.installed ? `<button class="mini-button connect" data-connect-agent="${item.id}" data-scope="global">Enable system-wide</button>` : ""}</div>
+      ${item.monitoring ? `<div class="judge-test-panel"><span class="label">TEST HARNESS</span><strong>Verify the connection or preview Pono Trail</strong><small>The test event creates one clearly labeled synthetic receipt with fictional data. It does not send a prompt to ${escapeHtml(item.name)} or a model provider.</small><div class="integration-actions"><button class="mini-button" data-test-agent="${item.id}">Test connection</button><button class="mini-button demo" data-sample-agent="${item.id}">Test event</button></div></div>` : item.installed ? `<div class="integration-actions"><button class="mini-button connect" data-connect-agent="${item.id}" data-scope="global">Enable system-wide</button></div>` : ""}
       <div class="integration-result" id="integration-result-${item.id}">${escapeHtml(item.monitoring ? "PonoLens is receiving supported activity from this harness." : item.hookConfigured ? "Hook configuration exists, but the compatible harness is not currently reachable." : item.installed ? "Install the PonoLens hook to begin coverage." : "Install this harness, then scan again.")}</div>
     </details>`).join("");
   document.querySelectorAll("[data-connect-agent]").forEach((button) => button.addEventListener("click", () => integrationAction(button.dataset.connectAgent, "connect", button, button.dataset.scope)));
   document.querySelectorAll("[data-test-agent]").forEach((button) => button.addEventListener("click", () => integrationAction(button.dataset.testAgent, "test", button)));
+  document.querySelectorAll("[data-sample-agent]").forEach((button) => button.addEventListener("click", () => integrationAction(button.dataset.sampleAgent, "sample", button)));
   document.querySelectorAll("#integrations details").forEach((details) => details.addEventListener("toggle", () => {
     const id = details.dataset.integrationId;
     if (details.open) {
@@ -247,24 +270,39 @@ function renderIntegrations(integrations) {
 }
 
 async function integrationAction(id, action, button, scope = "project") {
+  const actionLabels = { connect: ["Enabling…", "Enable system-wide"], test: ["Testing…", "Test connection"], sample: ["Creating event…", "Test event"] };
   button.disabled = true;
-  button.textContent = action === "connect" ? "Enabling…" : "Testing…";
+  button.textContent = actionLabels[action]?.[0] || "Working…";
   try {
     const result = await request(`/api/integrations/${id}/${action}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scope }) });
     renderIntegrations(result.integrations);
     const message = $("#integration-result-" + id);
     if (message) message.textContent = result.message || (result.alreadyConfigured ? "Already connected" : "Added. Restart the harness to load PonoLens.");
-    if (action === "test" && result.ok) await refreshDashboard();
+    if (action === "test") showHarnessToast({
+      title: result.ok ? "Connection test passed" : "Connection needs attention",
+      message: result.message || (result.ok ? "PonoLens reached this harness connection." : "PonoLens could not verify this harness connection."),
+      tone: result.ok ? "success" : "warning",
+    });
+    if (action === "sample") showHarnessToast({
+      title: "Test event created",
+      message: result.message || "The synthetic receipt is now available in Pono Trail under Needs Review.",
+    });
+    if ((action === "test" || action === "sample") && result.ok) await refreshDashboard();
   } catch (error) {
     button.disabled = false;
-    button.textContent = action === "connect" ? "Enable system-wide" : "Test";
+    button.textContent = actionLabels[action]?.[1] || "Try again";
     const message = $("#integration-result-" + id);
-    if (message) message.textContent = error.message;
+    const errorMessage = action === "sample" && error.status === 404
+      ? "Test event is unavailable because the local PonoLens service is out of date. Restart PonoLens, refresh this page, and try again."
+      : error.message;
+    if (message) message.textContent = errorMessage;
+    if (action === "test" || action === "sample") showHarnessToast({ title: action === "sample" ? "Test event failed" : "Connection test failed", message: errorMessage, tone: "error" });
   }
 }
 
 function renderFlow(event) {
   if (!event) return;
+  const synthetic = isSyntheticEvent(event);
   const risk = ["critical", "high"].includes(event.severity) ? "risky" : "";
   const routeState = event.decision === "blocked" ? "blocked" : event.decision === "approval_required" ? "review" : "expected";
   const workingFolder = event.details?.cwd || event.details?.workingDirectory || "";
@@ -272,7 +310,9 @@ function renderFlow(event) {
   const sourceDetail = folderName
     ? `In ${folderName}`
     : `${escapeHtml(event.details?.sentFileCount || 1)} file${event.details?.sentFileCount === 1 ? "" : "s"}`;
-  const destinationStatus = !event.destination
+  const destinationStatus = synthetic
+    ? "Synthetic demo · no transmission"
+    : !event.destination
     ? "No external destination"
     : event.decision === "blocked"
       ? "Stopped before execution"
@@ -290,7 +330,15 @@ function renderFlow(event) {
     <div class="flow-node ${risk}"><strong>${escapeHtml(event.destination || "Stayed on this device")}</strong><small>${destinationStatus}</small></div>`;
 }
 
+function isSyntheticEvent(event) {
+  return event.details?.details?.synthetic === true || String(event.source || "").includes("judge demo · synthetic");
+}
+
 function displayEvent(event) {
+  if (isSyntheticEvent(event)) return {
+    title: event.summary || `Synthetic judge demo · ${harnessIdentity(event.harness).label}`,
+    explanation: event.explanation || "This fictional receipt was generated locally. No prompt was sent to a harness or model provider.",
+  };
   if (event.action === "command") {
     const categories = protectedCategories(event).join(", ");
     return {
@@ -584,18 +632,19 @@ function openWarning(id) {
   const display = displayEvent(event);
   const blocked = event.decision === "blocked";
   const detected = detectedFindings(event);
-  const sent = Boolean(event.destination) && !blocked;
+  const synthetic = isSyntheticEvent(event);
+  const sent = Boolean(event.destination) && !blocked && !synthetic;
   const codexObserved = event.action === "prompt" && String(event.harness || "").toLowerCase() === "codex";
   const identity = harnessIdentity(event.harness);
   const review = event.decision === "approval_required" || (sent && detected.length > 0);
   $("#warning-dialog").className = blocked ? "event-blocked" : review ? "event-review" : "event-allowed";
-  $("#warning-status").textContent = blocked ? "Pono Guard stopped this" : review ? (sent ? "Sensitive information sent" : "Needs review") : "Allowed activity";
+  $("#warning-status").textContent = synthetic ? "Synthetic judge demo · Needs review" : blocked ? "Pono Guard stopped this" : review ? (sent ? "Sensitive information sent" : "Needs review") : "Allowed activity";
   $("#warning-status").className = `eyebrow ${blocked ? "danger-text" : review ? "review-text" : "safe-text"}`;
   $("#warning-symbol").textContent = blocked ? "!" : review ? "?" : "✓";
   $("#warning-title").textContent = display.title;
   $("#warning-explanation").textContent = display.explanation;
   $("#warning-source").textContent = event.source || "Your device";
-  $("#warning-destination").textContent = event.destination || "Stayed on this device";
+  $("#warning-destination").textContent = synthetic ? `${event.destination || "Simulated destination"} · no transmission` : event.destination || "Stayed on this device";
   $("#warning-recommendation").textContent = codexObserved && detected.length
     ? "This Codex prompt was already sent. Use Safe Prompt to remove identifiers before submitting a future prompt."
     : review && sent ? `Review what was sent. ${identity.label} can block enabled categories at supported pre-submit hooks.` : event.recommendation;
@@ -612,7 +661,9 @@ function openWarning(id) {
   $("#copy-redacted").hidden = !redactedPromptAvailable;
   $("#copy-redacted").dataset.eventId = redactedPromptAvailable ? String(event.id) : "";
   $("#copy-redacted").textContent = "Copy redacted prompt";
-  $("#event-timing").textContent = event.decision === "blocked"
+  $("#event-timing").textContent = synthetic
+    ? "Generated locally for demonstration. No harness or model-provider transmission occurred."
+    : event.decision === "blocked"
     ? "Stopped before execution. No transmission was observed."
     : sent
       ? `Observed after submission to ${event.destination}. This receipt cannot undo a completed transmission.`
@@ -712,6 +763,27 @@ function updateProviderRows() {
   $("#ollama-model-row").hidden = provider !== "ollama";
   $("#openai-model-row").hidden = provider !== "openai";
   $("#webapp-row").hidden = provider !== "webapp";
+}
+
+async function saveDefaultLlm(version) {
+  const provider = document.querySelector('[name="llm-provider"]:checked')?.value || "webapp";
+  const model = provider === "ollama" ? $("#ollama-model").value : provider === "openai" ? $("#openai-model").value.trim() : "";
+  const status = $("#llm-settings-status");
+  status.textContent = "Saving automatically…";
+  try {
+    const data = await request("/api/llm-settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ provider, model, webApp: $("#webapp").value }) });
+    if (version !== state.llmSaveVersion) return;
+    renderLlmSettings(data);
+    status.textContent = "Default model saved locally.";
+  } catch (error) {
+    if (version === state.llmSaveVersion) status.textContent = `Could not save automatically: ${error.message}`;
+  }
+}
+
+function scheduleDefaultLlmSave(delay = 0) {
+  clearTimeout(state.llmSaveTimer);
+  const version = ++state.llmSaveVersion;
+  state.llmSaveTimer = setTimeout(() => saveDefaultLlm(version), delay);
 }
 
 function applyDashboardState(data) {
@@ -972,7 +1044,14 @@ $("#appearance-form").addEventListener("change", () => applyAppearance({
   theme: document.querySelector('[name="theme"]:checked').value,
   fontSize: document.querySelector('[name="font-size"]:checked').value,
 }, true));
-document.querySelectorAll('[name="llm-provider"]').forEach((input) => input.addEventListener("change", updateProviderRows));
+document.querySelectorAll('[name="llm-provider"]').forEach((input) => input.addEventListener("change", () => {
+  updateProviderRows();
+  scheduleDefaultLlmSave();
+}));
+$("#ollama-model").addEventListener("change", () => scheduleDefaultLlmSave());
+$("#webapp").addEventListener("change", () => scheduleDefaultLlmSave());
+$("#openai-model").addEventListener("input", () => scheduleDefaultLlmSave(500));
+$("#openai-model").addEventListener("change", () => scheduleDefaultLlmSave());
 $("#refresh-models").addEventListener("click", async () => renderLlmSettings(await request("/api/llm-settings")));
 $("#save-openai-key").addEventListener("click", async () => {
   const input = $("#openai-api-key");
@@ -987,13 +1066,6 @@ $("#save-openai-key").addEventListener("click", async () => {
 $("#remove-openai-key").addEventListener("click", async () => {
   await request("/api/llm-credentials/openai", { method: "DELETE" });
   renderLlmSettings(await request("/api/llm-settings"));
-});
-$("#save-llm-settings").addEventListener("click", async () => {
-  const provider = document.querySelector('[name="llm-provider"]:checked').value;
-  const model = provider === "ollama" ? $("#ollama-model").value : provider === "openai" ? $("#openai-model").value.trim() : "";
-  const data = await request("/api/llm-settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ provider, model, webApp: $("#webapp").value }) });
-  renderLlmSettings(data);
-  $("#llm-settings-status").textContent = "Default model saved locally.";
 });
 $("#save-retention").addEventListener("click", async () => {
   const days = Number($("#retention-days").value);
@@ -1010,6 +1082,8 @@ document.addEventListener("keydown", (event) => {
     openSection("settings");
   }
 });
+
+$("#harness-toast-close").addEventListener("click", closeHarnessToast);
 
 $(".dialog-close").addEventListener("click", () => $("#warning-dialog").close());
 $(".summary-close").addEventListener("click", () => $("#summary-dialog").close());

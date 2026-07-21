@@ -72,11 +72,14 @@ When capability behavior changes, update the dashboard language, README, INSTALL
 - Test override: `PONOLENS_DATA_DIR=/tmp/ponolens-test`
 - Default event retention comes from `PRODUCT_DEFAULTS.retentionDays`
 - Pono Guard settings auto-save after each change
+- Default AI provider, model, and web-app selections auto-save; API-key changes remain explicit Keychain actions
 - Appearance preferences may use browser local storage because they are not sensitive
 
 Avoid destructive database migrations. Preserve user data and add migration tests for schema changes.
 
 Full-history counts, filters, summaries, and exports must query SQLite before pagination. Do not derive database-wide review panels from the 20-event home preview or the currently loaded 100-event Data Trail page. Harness accordion state is user interface state and must survive live polling re-renders.
+
+Privacy receipts are event detail views opened from Live Lens or Data Trail, not a separate navigation screen.
 
 ## Development workflow
 
