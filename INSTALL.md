@@ -20,12 +20,12 @@ Install the current public beta directly from GitHub:
 curl -fsSL https://raw.githubusercontent.com/tholmgren/ponolens-agent-monitor-personal-edition/main/install.sh | sh
 ```
 
-The downloaded script clones `https://github.com/tholmgren/ponolens-agent-monitor-personal-edition.git`. You can also clone the repository yourself and run `./install.sh` from the checkout. `PONOLENS_REPOSITORY_URL` can override the source for testing or a fork. The script requires Git and Node.js; it does not download or mount a DMG.
+The downloaded script fetches a GitHub source archive with `curl` and extracts it with macOS's built-in `tar`. The standard installation does not require Git, Xcode Command Line Tools, or acceptance of the Xcode license. You can also clone the repository yourself and run `./install.sh` from the checkout. `PONOLENS_ARCHIVE_URL` can override the archive for testing or a fork. The legacy `PONOLENS_REPOSITORY_URL` override remains available for a custom Git repository, but that custom mode requires Git. The script does not download or mount a DMG.
 
 ## Requirements
 
 - Node.js 22.5 or newer
-- Git
+- `curl` and `tar` (included with macOS)
 - macOS (Unix-based); Windows is planned for August 2026, while Linux and other Unix systems are not supported by this beta
 - A supported harness: Cursor, Claude Code CLI, Codex, or Windsurf
 - A local browser for the dashboard
@@ -60,6 +60,8 @@ PonoLens supports these environment variables:
 | `PORT` | Dashboard and collector listening port | `4317` |
 | `PONOLENS_COLLECTOR_URL` | Explicit base URL embedded into newly generated Cursor/Windsurf bridges | Address derived from the active host and `PORT` |
 | `PONOLENS_DATA_DIR` | SQLite database and generated bridge directory | `~/.ponolens` |
+| `PONOLENS_ARCHIVE_URL` | Source archive used by the one-line installer | Official GitHub `main` archive |
+| `PONOLENS_REPOSITORY_URL` | Custom Git repository fallback for installer testing; requires Git | Not used by the standard install |
 | `PONOLENS_OLLAMA_URL` | Ollama upstream used by Safe Prompt | `http://127.0.0.1:11434` |
 | `OPENAI_API_KEY` | Optional OpenAI API credential; the environment takes priority over the macOS credential entry | Not set |
 

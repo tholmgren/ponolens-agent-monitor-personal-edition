@@ -3,6 +3,7 @@ set -eu
 
 PRODUCT_NAME="PonoLens"
 REPOSITORY_URL="${PONOLENS_REPOSITORY_URL:-https://github.com/tholmgren/ponolens-agent-monitor-personal-edition.git}"
+ARCHIVE_URL="${PONOLENS_ARCHIVE_URL:-https://codeload.github.com/tholmgren/ponolens-agent-monitor-personal-edition/tar.gz/refs/heads/main}"
 INSTALL_ROOT="${PONOLENS_INSTALL_DIR:-$HOME/.ponolens/application}"
 DATA_ROOT="${PONOLENS_DATA_DIR:-$HOME/.ponolens}"
 LOG_FILE="$DATA_ROOT/ponolens.log"
@@ -20,7 +21,8 @@ NODE_BIN=$(command -v node)
 NODE_MAJOR=$(node -p "Number(process.versions.node.split('.')[0])")
 NODE_MINOR=$(node -p "Number(process.versions.node.split('.')[1])")
 [ "$NODE_MAJOR" -gt 22 ] || { [ "$NODE_MAJOR" -eq 22 ] && [ "$NODE_MINOR" -ge 5 ]; } || fail "Node.js 22.5 or newer is required; found $(node --version)"
-command -v git >/dev/null 2>&1 || fail "Git is required to download the competition preview"
+command -v curl >/dev/null 2>&1 || fail "curl is required to download the competition preview"
+command -v tar >/dev/null 2>&1 || fail "tar is required to unpack the competition preview"
 
 mkdir -p "$DATA_ROOT"
 chmod 700 "$DATA_ROOT"
@@ -41,12 +43,27 @@ if [ -f "$SCRIPT_DIR/package.json" ] && [ -d "$SCRIPT_DIR/src" ] && [ -d "$SCRIP
 else
   printf 'Downloading %s competition preview…\n' "$PRODUCT_NAME"
   STAGE_DIR="$DATA_ROOT/application.new"
+  DOWNLOAD_DIR=$(mktemp -d "$DATA_ROOT/download.XXXXXX") || fail "could not create a temporary download directory"
+  cleanup_download() { rm -rf "$DOWNLOAD_DIR"; }
+  trap cleanup_download EXIT HUP INT TERM
   rm -rf "$STAGE_DIR"
-  git clone --depth 1 "$REPOSITORY_URL" "$STAGE_DIR" || fail "download failed; confirm you can access the repository or set PONOLENS_REPOSITORY_URL"
+  mkdir -p "$STAGE_DIR"
+  if [ -n "${PONOLENS_REPOSITORY_URL:-}" ] && [ -z "${PONOLENS_ARCHIVE_URL:-}" ]; then
+    command -v git >/dev/null 2>&1 || fail "a custom PONOLENS_REPOSITORY_URL requires Git, or set PONOLENS_ARCHIVE_URL instead"
+    rm -rf "$STAGE_DIR"
+    git clone --depth 1 "$REPOSITORY_URL" "$STAGE_DIR" || fail "download failed; confirm the custom repository URL is accessible"
+    rm -rf "$STAGE_DIR/.git"
+  else
+    curl -fL --retry 3 --connect-timeout 15 "$ARCHIVE_URL" -o "$DOWNLOAD_DIR/ponolens.tar.gz" || fail "download failed; confirm you can access GitHub or set PONOLENS_ARCHIVE_URL"
+    tar -xzf "$DOWNLOAD_DIR/ponolens.tar.gz" --strip-components=1 -C "$STAGE_DIR" || fail "downloaded archive could not be unpacked"
+  fi
+  [ -f "$STAGE_DIR/package.json" ] && [ -d "$STAGE_DIR/src" ] && [ -d "$STAGE_DIR/public" ] || fail "downloaded package is not a valid PonoLens release"
   rm -rf "$INSTALL_ROOT.old"
   [ ! -d "$INSTALL_ROOT" ] || mv "$INSTALL_ROOT" "$INSTALL_ROOT.old"
   mv "$STAGE_DIR" "$INSTALL_ROOT"
   rm -rf "$INSTALL_ROOT.old"
+  cleanup_download
+  trap - EXIT HUP INT TERM
 fi
 
 if [ -f "$PID_FILE" ]; then

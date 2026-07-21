@@ -35,7 +35,7 @@ The beta uses one script-installed local service and browser dashboard. Install 
 curl -fsSL https://raw.githubusercontent.com/tholmgren/ponolens-agent-monitor-personal-edition/main/install.sh | sh
 ```
 
-The installer downloads the public GitHub repository, requires Node.js 22.5+ and Git, installs the application under `~/.ponolens/application`, starts the loopback-only service, and opens the dashboard. It also creates `~/Applications/PonoLens.app`; opening that launcher restarts the service when necessary and opens the dashboard. You can alternatively clone the repository and run `./install.sh` from the checkout. The launcher is locally generated and is not yet a signed native distribution.
+The installer downloads a release archive with `curl` and extracts it with macOS's built-in `tar`; the standard installation does not require Git, Xcode, or acceptance of the Xcode license. It requires Node.js 22.5+, installs the application under `~/.ponolens/application`, starts the loopback-only service, and opens the dashboard. It also creates `~/Applications/PonoLens.app`; opening that launcher restarts the service when necessary and opens the dashboard. You can alternatively clone the repository and run `./install.sh` from the checkout. The launcher is locally generated and is not yet a signed native distribution.
 
 ## Safe sample data and demo run
 
