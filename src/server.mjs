@@ -513,6 +513,12 @@ const server = createServer(async (request, response) => {
       return json(response, 200, { manual: false, tokenizedReply: reply, restored, vaultDeleted: true, provider: settings.provider, model: settings.model });
     }
 
+    if (request.method === "DELETE" && url.pathname === "/api/safe-prompt") {
+      const body = await readJsonBody(request);
+      if (body.roundTripId) roundTrips.delete(String(body.roundTripId));
+      return json(response, 200, { cleared: true });
+    }
+
     if (request.method === "POST" && url.pathname === "/api/safe-prompt/restore") {
       const body = await readJsonBody(request);
       const vault = roundTrips.get(body.roundTripId);

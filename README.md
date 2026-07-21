@@ -152,8 +152,8 @@ Trusted hostnames reduce destination-risk scoring but never bypass sensitive-dat
 
 1. Create the original prompt. The initial scan runs locally in the browser.
 2. Review and edit the safe draft. Identifiers are replaced with local tokens; sensitive subject matter may remain with a warning when removing it would destroy the prompt's purpose.
-3. Copy the tokenized prompt or send it to the selected default provider.
-4. Paste or retrieve the model reply.
+3. Copy the tokenized prompt or send it to the selected default provider. In Web App mode, Copy is the primary action and opens a persistent confirmation with a safe link to launch the selected site in a new tab. Prompt text is never placed in the URL.
+4. In Web App mode, dismiss the copy confirmation to reveal Next, then paste the model reply. Copy remains available for retries. API/local modes can retrieve the reply directly.
 5. Restore tokenized values locally for the user-visible result.
 
 The token map and original sensitive values are not sent to the model provider by this workflow. The user must still review the remaining narrative and use an organization-approved provider. Tokenization supports privacy and compliance work, but does not itself establish HIPAA compliance, legal privilege, SEC compliance, or any certification.

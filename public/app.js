@@ -1,13 +1,89 @@
 import { scanContent } from "./detectors.js";
 import { HARNESS_CATALOG, PRODUCT_DEFAULTS, PROTECTION_CATEGORIES, PROVIDER_CATALOG, featureEnabled, harnessFor } from "./product-config.js";
 
-const state = { events: [], selected: null, activityFilter: "all", trailFilter: "all", trailHarness: "all", trailOffset: 0, openIntegration: null, roundTripId: null, localTokenMapping: {}, draftAliases: {}, localVaultTimer: null, localScan: null, originalFindings: [], promptCopied: false, llmController: null, llmTimer: null, llmSettings: null, llmSaveTimer: null, llmSaveVersion: 0, policyDirty: false, policySaveTimer: null, policySaveVersion: 0, toastTimer: null, policy: { presets: {}, customValues: [] } };
+const state = { events: [], selected: null, activityFilter: "all", trailFilter: "all", trailHarness: "all", trailOffset: 0, openIntegration: null, roundTripId: null, localTokenMapping: {}, draftAliases: {}, localVaultTimer: null, localScan: null, originalFindings: [], promptCopied: false, webAppReady: false, llmController: null, llmTimer: null, llmSettings: null, llmSaveTimer: null, llmSaveVersion: 0, policyDirty: false, policySaveTimer: null, policySaveVersion: 0, toastTimer: null, toastOnClose: null, policy: { presets: {}, customValues: [] } };
 const $ = (selector) => document.querySelector(selector);
 const APPEARANCE_KEY = "ponolens-appearance";
 const THRESHOLD_INPUTS = Object.freeze([
   ["threshold-large", "largeTransferPercent"], ["threshold-entire", "entireRepoPercent"], ["threshold-files", "minimumRepoFiles"],
   ["threshold-medium", "medium"], ["threshold-high", "high"], ["threshold-critical", "critical"],
 ]);
+const SAFE_PROMPT_TIPS = Object.freeze({
+  1: Object.freeze([
+    Object.freeze({ title: "Help PonoLens recognize names", body: "Name detection uses context. “Joe Doe” alone may be missed; “Patient: Joe Doe”, “Client: Joe Doe”, or “Employee: Joe Doe” is more likely to be tokenized." }),
+    Object.freeze({ title: "Protect names that must never be missed", body: "Add an exact person, client, patient, or organization name under Pono Guard → Your protected values. Exact protected values are checked locally." }),
+    Object.freeze({ title: "Describe the task without unnecessary identifiers", body: "Include only the information the AI needs. Generic roles such as “the patient” or “the client” are safer than a real name when identity is not required." }),
+  ]),
+  2: Object.freeze([
+    Object.freeze({ title: "Review every replacement", body: "Confirm that identifiers became clear role-based placeholders and that the remaining text still gives the AI enough context to help." }),
+    Object.freeze({ title: "Warnings may remain on purpose", body: "A health condition or legal topic can remain when removing it would destroy the task. Decide whether the remaining narrative is appropriate for your provider." }),
+    Object.freeze({ title: "Edited drafts are checked again", body: "You can revise this draft. PonoLens rescans your changes before creating the final tokenized prompt." }),
+  ]),
+  3: Object.freeze([
+    Object.freeze({ title: "Only the tokenized prompt should leave", body: "Review the final prompt before copying or sending it. The local token mapping must stay in PonoLens." }),
+    Object.freeze({ title: "Web apps use copy and paste", body: "PonoLens can open the selected website, but it does not put prompt text in the URL or control the provider’s composer." }),
+    Object.freeze({ title: "Use an approved provider", body: "Tokenization reduces direct disclosure but does not make every remaining narrative anonymous or automatically compliant." }),
+  ]),
+  4: Object.freeze([
+    Object.freeze({ title: "Keep placeholder tokens unchanged", body: "The reply must preserve tokens such as [[PATIENT_1]] so PonoLens can restore the correct local values." }),
+    Object.freeze({ title: "The restored result is sensitive again", body: "After restoration, handle the result under the same privacy and security rules as the original information." }),
+    Object.freeze({ title: "Temporary mappings expire", body: "Restore the reply before the local token vault expires. Start a new prompt if the mapping is no longer available." }),
+  ]),
+});
+const ADVANCED_GUARD_HELP = Object.freeze({
+  actions: Object.freeze({
+    title: "Action by category",
+    intro: "Choose what PonoLens should do when each type of protected information is detected. Changes apply automatically to new activity.",
+    items: Object.freeze([
+      Object.freeze({ name: "Protection category", impact: "Each row controls one category, such as secrets, personal information, healthcare, legal, financial, or custom rules. Categories can use different actions." }),
+      Object.freeze({ name: "Report Only · Stable", impact: "Allows the activity to continue and creates a redacted privacy receipt. It provides visibility but does not prevent transmission." }),
+      Object.freeze({ name: "Redact · Experimental", impact: "At a supported pre-submit hook, stops the original protected prompt and provides a tokenized version for review. Unsupported or post-submit activity can only be reported." }),
+      Object.freeze({ name: "Block · Experimental", impact: "At a supported pre-submit hook, stops a matching prompt before the harness processes it. It is not available for every harness or chat surface." }),
+    ]),
+  }),
+  destinations: Object.freeze({
+    title: "Trusted destinations",
+    intro: "Identify provider hostnames your organization expects agents to contact. Enter one hostname per line without a path or prompt data.",
+    items: Object.freeze([
+      Object.freeze({ name: "Approved destination hostnames", impact: "A hostname also covers its subdomains. For example, an approved example.com entry includes api.example.com." }),
+      Object.freeze({ name: "Risk impact", impact: "A trusted match removes the untrusted-destination score from new events, which can reduce warnings caused only by an unfamiliar destination." }),
+      Object.freeze({ name: "What trust does not do", impact: "Trust never disables sensitive-data detection or category actions. A prompt containing protected information can still be reported, redacted, or blocked." }),
+    ]),
+  }),
+  thresholds: Object.freeze({
+    title: "Risk thresholds",
+    intro: "Thresholds tune when repository transfers add risk and how total event scores are labeled. Lower values create more warnings; higher values create fewer warnings.",
+    items: Object.freeze([
+      Object.freeze({ name: "Large transfer %", impact: "The percentage of project files that adds a large-transfer risk score when the minimum file count is also met." }),
+      Object.freeze({ name: "Entire project %", impact: "The percentage treated as an entire-project upload. Lowering it makes the strongest repository-transfer warning trigger sooner." }),
+      Object.freeze({ name: "Minimum project files", impact: "Prevents very small projects from being classified by percentage alone. Raising it excludes more small repositories from transfer scoring." }),
+      Object.freeze({ name: "Review score", impact: "The minimum total score labeled medium risk and shown for review. Sensitive command receipts are raised to at least this score." }),
+      Object.freeze({ name: "High score", impact: "The minimum total score labeled high risk. Depending on the active policy and hook coverage, high-risk activity may require approval." }),
+      Object.freeze({ name: "Critical score", impact: "The minimum total score labeled critical. At a supported enforcement point, critical activity can be blocked." }),
+    ]),
+  }),
+  dictionaries: Object.freeze({
+    title: "Organization dictionaries",
+    intro: "Create local exact-match lists for identifiers PonoLens cannot reliably infer, such as client names, internal codes, project names, or patient identifiers.",
+    items: Object.freeze([
+      Object.freeze({ name: "Dictionary name", impact: "A local label that helps administrators recognize the list. It does not affect matching." }),
+      Object.freeze({ name: "Protection category", impact: "Determines which category action and receipt label apply when a listed value is detected." }),
+      Object.freeze({ name: "Protected values", impact: "Enter one exact value per line. More entries expand detection coverage but broad or common words can create false positives." }),
+      Object.freeze({ name: "Storage and removal", impact: "Values remain in the local policy database and are excluded from safe policy exports. Removing a dictionary stops it from matching new activity." }),
+    ]),
+  }),
+  regex: Object.freeze({
+    title: "Custom regular-expression rules",
+    intro: "Add constrained local patterns for consistent identifier formats. Test with fictional examples before relying on a new rule.",
+    items: Object.freeze([
+      Object.freeze({ name: "Rule name", impact: "A local description shown in policy management. It does not change how the pattern matches." }),
+      Object.freeze({ name: "Protection category", impact: "Controls the action and category label used when the pattern finds a match." }),
+      Object.freeze({ name: "Safe pattern", impact: "Defines the format to detect. The safety subset rejects groups, alternation, backreferences, unbounded quantifiers, and excessive ranges to reduce performance risk." }),
+      Object.freeze({ name: "Flags", impact: "Use i for case-insensitive matching and g to find multiple occurrences. Removing i makes letter case significant and can reduce matches." }),
+      Object.freeze({ name: "Detection impact", impact: "A pattern that is too broad can flag ordinary text; one that is too narrow can miss variants. New rules apply automatically after they are added." }),
+    ]),
+  }),
+});
 
 function getAppearance() {
   try {
@@ -83,18 +159,31 @@ function closeHarnessToast() {
   clearTimeout(state.toastTimer);
   state.toastTimer = null;
   $("#harness-toast").hidden = true;
+  const onClose = state.toastOnClose;
+  state.toastOnClose = null;
+  onClose?.();
 }
 
-function showHarnessToast({ title, message, tone = "success" }) {
+function showHarnessToast({ title, message, tone = "success", actionLabel = "", actionUrl = "", sticky = false, onClose = null }) {
   const toast = $("#harness-toast");
   clearTimeout(state.toastTimer);
+  if (!toast.hidden && state.toastOnClose) {
+    const previousOnClose = state.toastOnClose;
+    state.toastOnClose = null;
+    previousOnClose();
+  }
+  state.toastOnClose = onClose;
   toast.className = `harness-toast ${tone}`;
   toast.setAttribute("role", tone === "error" ? "alert" : "status");
   $("#harness-toast-title").textContent = title;
   $("#harness-toast-message").textContent = message;
   $(".harness-toast-icon").textContent = tone === "error" ? "!" : tone === "warning" ? "?" : "✓";
+  const action = $("#harness-toast-action");
+  action.hidden = !actionLabel || !actionUrl;
+  action.textContent = actionLabel;
+  action.href = actionUrl || "#";
   toast.hidden = false;
-  state.toastTimer = setTimeout(closeHarnessToast, 8000);
+  state.toastTimer = sticky ? null : setTimeout(closeHarnessToast, 8000);
 }
 
 function escapeHtml(value) {
@@ -143,6 +232,31 @@ function initializeProductCatalog() {
 }
 
 initializeProductCatalog();
+
+function renderSafeTip(container, requestedIndex = 0) {
+  const tips = SAFE_PROMPT_TIPS[container.dataset.safeTips] || [];
+  const index = ((requestedIndex % tips.length) + tips.length) % tips.length;
+  const tip = tips[index];
+  container.dataset.tipIndex = String(index);
+  container.innerHTML = `<aside class="safe-tip-card" aria-label="Helpful Safe Prompt tip"><div class="safe-tip-copy" aria-live="polite"><strong>Helpful tip · ${escapeHtml(tip.title)}</strong><span>${escapeHtml(tip.body)}</span></div><div class="safe-tip-controls"><button type="button" data-tip-delta="-1" aria-label="Previous tip">‹</button><span class="safe-tip-position">${index + 1} / ${tips.length}</span><button type="button" data-tip-delta="1" aria-label="Next tip">›</button></div></aside>`;
+}
+
+document.querySelectorAll("[data-safe-tips]").forEach((container) => {
+  renderSafeTip(container);
+  container.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-tip-delta]");
+    if (button) renderSafeTip(container, Number(container.dataset.tipIndex) + Number(button.dataset.tipDelta));
+  });
+});
+
+function openAdvancedHelp(topic) {
+  const help = ADVANCED_GUARD_HELP[topic];
+  if (!help) return;
+  $("#advanced-help-title").textContent = help.title;
+  $("#advanced-help-intro").textContent = help.intro;
+  $("#advanced-help-content").innerHTML = help.items.map((item) => `<section class="advanced-help-item"><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.impact)}</p></section>`).join("");
+  $("#advanced-help-dialog").showModal();
+}
 
 function localPromptScan(content) { return scanContent(content, state.policy); }
 
@@ -219,6 +333,36 @@ function showSafeStep(step) {
     item.classList.toggle("complete", number < step);
   });
   $(step === 1 ? "#safe-prompt-text" : step === 2 ? "#sanitized-preview" : step === 3 ? "#tokenized-prompt" : "#model-reply").focus();
+}
+
+function resetSafePrompt() {
+  const roundTripId = state.roundTripId;
+  state.llmController?.abort();
+  state.llmController = null;
+  closeLlmProgress();
+  clearTimeout(state.localVaultTimer);
+  state.localVaultTimer = null;
+  if (!$("#harness-toast").hidden) closeHarnessToast();
+  state.roundTripId = null;
+  state.localTokenMapping = {};
+  state.draftAliases = {};
+  state.localScan = null;
+  state.originalFindings = [];
+  state.promptCopied = false;
+  state.webAppReady = false;
+  for (const selector of ["#safe-prompt-text", "#sanitized-preview", "#tokenized-prompt", "#model-reply", "#restored-reply"]) $(selector).value = "";
+  $("#restored-step").hidden = true;
+  $("#local-findings").innerHTML = "";
+  $("#local-scan-result").classList.remove("has-findings");
+  $("#local-scan-result").querySelector("strong").textContent = "Local browser scan ready";
+  $("#safe-prompt-status").textContent = "New prompt ready. Nothing has been sent.";
+  $("#round-trip-status").textContent = "";
+  updateSafeSendActions();
+  document.querySelectorAll("[data-safe-tips]").forEach((container) => renderSafeTip(container));
+  showSafeStep(1);
+  if (roundTripId) request("/api/safe-prompt", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ roundTripId }) }).catch(() => {
+    $("#safe-prompt-status").textContent = "The prompt was cleared here. Its expired server-memory token vault will be discarded automatically.";
+  });
 }
 
 function renderStats(stats) {
@@ -707,8 +851,10 @@ async function load() {
 }
 
 function renderLlmSettings(data) {
+  const previousProvider = state.llmSettings?.settings?.provider;
   const settings = data.settings;
   state.llmSettings = data;
+  if (previousProvider && previousProvider !== settings.provider) state.webAppReady = false;
   document.querySelector(`[name="llm-provider"][value="${settings.provider}"]`).checked = true;
   const models = data.ollama.models || [];
   $("#ollama-model").innerHTML = models.length ? models.map((item) => `<option value="${escapeHtml(item.name)}">${escapeHtml(item.name)}</option>`).join("") : `<option value="">No installed models found</option>`;
@@ -733,7 +879,16 @@ function renderLlmSettings(data) {
     : settings.provider === "openai"
       ? `OpenAI API · ${settings.model || openaiDefault}`
       : `${webNames[settings.webApp] || settings.webApp} · manual copy and paste`;
+  updateSafeSendActions();
   updateProviderRows();
+}
+
+function updateSafeSendActions() {
+  const webAppSelected = state.llmSettings?.settings?.provider === "webapp";
+  $("#send-default-llm").hidden = webAppSelected;
+  $("#copy-tokenized").className = webAppSelected ? "primary-button" : "secondary-button";
+  $("#next-to-reply").textContent = webAppSelected ? "Next" : "Next: paste reply";
+  $("#next-to-reply").hidden = webAppSelected && !state.webAppReady;
 }
 
 function updateQuickProviderRows() {
@@ -858,6 +1013,8 @@ $("#policy-form").addEventListener("submit", async (event) => {
 
 document.querySelectorAll(".nav-item[data-view]").forEach((button) => button.addEventListener("click", () => button.dataset.view === "trail" ? openTrail(0) : openSection(button.dataset.view)));
 document.querySelectorAll("[data-open-view]").forEach((button) => button.addEventListener("click", () => openSection(button.dataset.openView)));
+document.querySelectorAll("[data-advanced-help]").forEach((button) => button.addEventListener("click", () => openAdvancedHelp(button.dataset.advancedHelp)));
+document.querySelectorAll(".advanced-help-close").forEach((button) => button.addEventListener("click", () => $("#advanced-help-dialog").close()));
 for (const id of ["trusted-destinations","threshold-large","threshold-entire","threshold-files","threshold-medium","threshold-high","threshold-critical"]) $(`#${id}`).addEventListener("change", schedulePolicySave);
 $("#add-dictionary").addEventListener("click", () => {
   const label = $("#dictionary-label").value.trim(), values = $("#dictionary-values").value.split(/\r?\n/).map((value) => value.trim()).filter(Boolean);
@@ -956,6 +1113,8 @@ $("#check-safe-draft").addEventListener("click", async () => {
     $("#restored-reply").value = "";
     $("#restored-step").hidden = true;
     state.promptCopied = false;
+    state.webAppReady = false;
+    updateSafeSendActions();
     showSafeStep(3);
     $("#round-trip-status").textContent = `The identifier mapping stays only in this browser's memory. The sanitized prompt expires at ${new Date(result.expiresAt).toLocaleTimeString()}.`;
     state.events.unshift(result.event);
@@ -968,6 +1127,24 @@ $("#check-safe-draft").addEventListener("click", async () => {
 $("#copy-tokenized").addEventListener("click", async () => {
   await navigator.clipboard.writeText($("#tokenized-prompt").value);
   state.promptCopied = true;
+  const settings = state.llmSettings?.settings;
+  if (settings?.provider === "webapp") {
+    const webApp = PROVIDER_CATALOG.webApps.find((provider) => provider.id === settings.webApp) || PROVIDER_CATALOG.webApps[0];
+    $("#round-trip-status").textContent = `Protected prompt copied. Launch ${webApp.label}, paste it there, then return to continue.`;
+    showHarnessToast({
+      title: "Protected prompt copied",
+      message: "Only the tokenized prompt was copied. The local identifier mapping stayed in PonoLens.",
+      actionLabel: `Launch ${webApp.label}`,
+      actionUrl: webApp.url,
+      sticky: true,
+      onClose: () => {
+        state.webAppReady = true;
+        updateSafeSendActions();
+        $("#round-trip-status").textContent = `When you have a reply from ${webApp.label}, select Next and paste it into PonoLens.`;
+      },
+    });
+    return;
+  }
   $("#round-trip-status").textContent = "Protected prompt copied. The local token mapping was not copied.";
 });
 $("#send-default-llm").addEventListener("click", async () => {
@@ -1026,6 +1203,7 @@ $("#next-to-reply").addEventListener("click", () => {
 $("#back-to-create").addEventListener("click", () => showSafeStep(1));
 $("#back-to-draft").addEventListener("click", () => showSafeStep(2));
 $("#back-to-copy").addEventListener("click", () => showSafeStep(3));
+document.querySelectorAll(".safe-prompt-reset").forEach((button) => button.addEventListener("click", resetSafePrompt));
 $("#restore-reply").addEventListener("click", () => {
   const status = $("#round-trip-status");
   if (!$("#model-reply").value.trim()) return status.textContent = "Paste the model reply first.";

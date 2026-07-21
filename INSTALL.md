@@ -137,7 +137,7 @@ An orange Codex receipt means sensitive information was detected after submissio
 
 ## Safe Prompt providers
 
-Safe Prompt can work without an API: choose a web app, copy the tokenized prompt, paste it into the provider, then paste the reply back into PonoLens for local restoration.
+Safe Prompt can work without an API: choose a web app, select the primary **Copy** action, and use the confirmation's **Launch [app name]** link to open the selected site in a new tab. PonoLens does not put prompt text in that URL. Return to PonoLens, close the confirmation to reveal **Next**, then paste the provider's reply for local restoration. **Copy** remains available for retries.
 
 ### Ollama
 
