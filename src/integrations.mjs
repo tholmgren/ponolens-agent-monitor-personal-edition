@@ -1,4 +1,4 @@
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync, spawn, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
@@ -279,11 +279,51 @@ function writeDevinHooks(path, root, bridgeDataDir, collectorBaseUrl) {
   writeFileSync(path, `${JSON.stringify(config, null, 2)}\n`, "utf8");
 }
 
-export function testIntegration(root, id, dataDir) {
+function runHookBridge(path, input, timeout = 10_000) {
+  return new Promise((resolve) => {
+    const child = spawn(process.execPath, [path], { stdio: ["pipe", "pipe", "pipe"] });
+    let stdout = "";
+    let stderr = "";
+    const timer = setTimeout(() => child.kill("SIGTERM"), timeout);
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (chunk) => { stdout += chunk; });
+    child.stderr.on("data", (chunk) => { stderr += chunk; });
+    child.on("error", (error) => { clearTimeout(timer); resolve({ status: null, stdout, stderr: stderr || error.message }); });
+    child.on("close", (status) => { clearTimeout(timer); resolve({ status, stdout, stderr }); });
+    child.stdin.end(input);
+  });
+}
+
+export async function testIntegration(root, id, dataDir) {
   if (!DEFINITIONS[id]) throw new Error("Unknown harness");
   if (id === "cursor") {
-    const hooks = join(root, ".cursor/hooks.json");
-    return { ok: hasPonoLensConfiguration(hooks, "cursor", "hook"), message: "Cursor prompt hook is readable. Fully quit and reopen Cursor after changing system-wide hooks." };
+    const projectHooks = join(root, ".cursor/hooks.json");
+    const hooks = hasPonoLensConfiguration(DEFINITIONS[id].userHookConfig, "cursor", "hook")
+      ? DEFINITIONS[id].userHookConfig
+      : projectHooks;
+    if (!hasPonoLensConfiguration(hooks, "cursor", "hook")) {
+      return { ok: false, message: "Cursor prompt hooks are not configured. Enable Cursor for this project or system-wide first." };
+    }
+    const bridge = join(dirname(hooks), "ponolens-hook.mjs");
+    if (!existsSync(bridge)) return { ok: false, message: "Cursor's PonoLens hook bridge is missing. Enable the integration again to repair it." };
+    const input = JSON.stringify({
+      hook_event_name: "beforeSubmitPrompt",
+      conversation_id: `dashboard-test-${Date.now()}`,
+      workspace_roots: [root],
+      prompt: "Harmless PonoLens connection test",
+    });
+    const result = await runHookBridge(bridge, input);
+    let response = null;
+    try { response = JSON.parse(result.stdout || ""); } catch { /* report the invalid bridge response below */ }
+    const ok = result.status === 0 && !result.stderr?.trim() && response && typeof response.continue === "boolean";
+    return {
+      ok,
+      message: ok
+        ? "Cursor prompt hook reached the live PonoLens collector successfully. Fully quit and reopen Cursor only after changing hook configuration."
+        : "Cursor's hook is configured but could not reach the PonoLens collector. Restart PonoLens, then test again.",
+      error: result.stderr?.trim() || (!response ? "The Cursor hook returned an invalid response." : null),
+    };
   }
   const harness = id;
   const input = JSON.stringify(id === "windsurf" ? {

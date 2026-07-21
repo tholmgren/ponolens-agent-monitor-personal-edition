@@ -303,6 +303,9 @@ details { font-size: var(--text-caption); color: var(--muted); } details summary
 .danger-button { background: var(--danger); }
 .danger-outline-button { min-height: 44px; padding: 11px 15px; border: 2px solid var(--danger); border-radius: 9px; background: transparent; color: var(--danger); font-weight: 800; cursor: pointer; }
 .data-management-actions { display: flex; flex-wrap: wrap; gap: 10px; }.confirmation-field { display: grid; gap: 8px; margin-top: 18px; }.confirmation-field input { width: 100%; }
+.service-restart-row { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 18px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--paper) 72%, var(--card)); }
+.service-restart-row > div { display: grid; gap: 5px; min-width: 0; }.service-restart-row strong { font-size: var(--text-body); }.service-restart-row small { color: var(--muted); font-size: var(--text-detail); line-height: 1.5; }.service-restart-row button { flex: 0 0 auto; }
+@media (max-width: 620px) { .service-restart-row { align-items: stretch; flex-direction: column; }.service-restart-row button { width: 100%; } }
 .dialog-footnote { text-align: center; color: var(--muted); font-size: var(--text-caption); margin: 16px 0 0; }
 #warning-dialog { width: min(900px, calc(100vw - 48px)); }
 #warning-dialog h2 { max-width: none; }

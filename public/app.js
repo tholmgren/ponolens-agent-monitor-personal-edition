@@ -1416,6 +1416,40 @@ function closeAutoStartToast() {
   delete $("#auto-start").dataset.confirmed;
 }
 
+async function waitForRestart(reconnectUrl) {
+  const deadline = Date.now() + 30000;
+  await new Promise((resolve) => setTimeout(resolve, 700));
+  while (Date.now() < deadline) {
+    try {
+      const response = await fetch("/health", { cache: "no-store" });
+      if (response.ok) {
+        location.replace(reconnectUrl);
+        return;
+      }
+    } catch { /* the collector is expected to be unavailable briefly */ }
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  throw new Error("PonoLens did not reconnect within 30 seconds. Open the PonoLens app in your Applications folder.");
+}
+
+$("#restart-service").addEventListener("click", async () => {
+  const button = $("#restart-service");
+  const status = $("#restart-service-status");
+  button.disabled = true;
+  button.textContent = "Restarting…";
+  status.textContent = "Stopping and restarting the local collector…";
+  try {
+    const result = await request("/api/system/restart", { method: "POST" });
+    showHarnessToast({ title: "Restarting PonoLens", message: result.message, sticky: true });
+    await waitForRestart(result.reconnectUrl);
+  } catch (error) {
+    button.disabled = false;
+    button.textContent = "Restart service";
+    status.textContent = error.message;
+    showHarnessToast({ title: "Could not restart PonoLens", message: error.message, tone: "error", sticky: true });
+  }
+});
+
 $("#cancel-auto-start").addEventListener("click", closeAutoStartToast);
 $("#close-auto-start").addEventListener("click", closeAutoStartToast);
 $("#auto-start").addEventListener("change", async () => {

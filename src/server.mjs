@@ -1,5 +1,5 @@
 import { createServer } from "node:http";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { chmodSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { homedir } from "node:os";
@@ -45,6 +45,27 @@ const AUTO_START_PATH = join(homedir(), "Library", "LaunchAgents", `${AUTO_START
 const getLlmSettings = () => ({ ...DEFAULT_LLM_SETTINGS, ...store.getSetting("llm_settings", DEFAULT_LLM_SETTINGS) });
 const getRetentionDays = () => Math.max(1, Math.min(PRODUCT_DEFAULTS.retentionMaxDays, Number(store.getSetting("retention_days", PRODUCT_DEFAULTS.retentionDays)) || PRODUCT_DEFAULTS.retentionDays));
 let lastRetentionPrune = 0;
+let restartScheduled = false;
+
+function scheduleServiceRestart() {
+  if (restartScheduled) return false;
+  restartScheduled = true;
+  const serverEntry = fileURLToPath(import.meta.url);
+  setTimeout(() => {
+    server.close(() => {
+      const child = spawn(process.execPath, [...process.execArgv, serverEntry], {
+        cwd: root,
+        env: process.env,
+        detached: true,
+        stdio: "ignore",
+      });
+      child.unref();
+      process.exit(0);
+    });
+    setTimeout(() => process.exit(1), 5000).unref();
+  }, 250).unref();
+  return true;
+}
 
 function applyRetention() {
   if (Date.now() - lastRetentionPrune < 3600000) return 0;
@@ -342,6 +363,15 @@ const server = createServer(async (request, response) => {
       });
     }
 
+    if (request.method === "POST" && url.pathname === "/api/system/restart") {
+      if (!scheduleServiceRestart()) return json(response, 409, { error: "PonoLens is already restarting" });
+      return json(response, 202, {
+        restarting: true,
+        reconnectUrl: dashboardAuth.accessUrl(collectorBaseUrl),
+        message: "PonoLens is restarting. The dashboard will reconnect automatically.",
+      });
+    }
+
     if (request.method === "GET" && url.pathname === "/api/events") {
       applyRetention();
       const limit = Math.max(1, Math.min(PRODUCT_DEFAULTS.activityPageSize, Number(url.searchParams.get("limit")) || PRODUCT_DEFAULTS.activityPageSize));
@@ -426,7 +456,7 @@ const server = createServer(async (request, response) => {
         const saved = store.add(redactEventForStorage(event, policy), analysis);
         return json(response, 201, { ok: true, eventId: saved.id, message: `Created synthetic Pono Trail event #${saved.id}. No prompt was sent. Open Pono Trail and select Needs Review to view it.`, integrations: await integrationSnapshot() });
       }
-      const result = operation === "connect" ? connectIntegration(root, id, body.scope || "project", dataDir, collectorBaseUrl) : testIntegration(root, id, dataDir);
+      const result = operation === "connect" ? connectIntegration(root, id, body.scope || "project", dataDir, collectorBaseUrl) : await testIntegration(root, id, dataDir);
       return json(response, 200, { ...result, integrations: await integrationSnapshot() });
     }
 
