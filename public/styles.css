@@ -231,6 +231,7 @@ dialog::backdrop { background: rgba(5, 16, 12, .66); backdrop-filter: blur(4px);
 .warning-accent { position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: var(--danger); }
 .dialog-close { position: absolute; right: 15px; top: 12px; border: 0; background: transparent; font-size: calc(24px * var(--font-scale)); color: var(--muted); cursor: pointer; }
 .warning-symbol { width: 46px; height: 46px; display: grid; place-items: center; border-radius: 50%; background: #ffebe8; color: var(--danger); font-size: calc(24px * var(--font-scale)); font-weight: 900; margin-bottom: 16px; }
+.warning-timestamp { display: block; margin: -2px 0 12px; color: var(--muted); font-size: var(--text-detail); font-weight: 650; }
 .danger-text { color: var(--danger); }
 .safe-text { color: #55c18d; }
 .review-text { color: var(--warning); }

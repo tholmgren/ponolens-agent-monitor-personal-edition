@@ -190,6 +190,11 @@ function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[char]);
 }
 
+function formatEventDateTime(value) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "Date unavailable" : date.toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+}
+
 function initializeProductCatalog() {
   const harnesses = Object.values(HARNESS_CATALOG).filter((harness) => !harness.feature || featureEnabled(harness.feature));
   const supportedHarnesses = harnesses.filter((harness) => harness.integration !== false).map((harness) => harness.name).join(", ");
@@ -559,7 +564,7 @@ async function openTrail(offset = 0) {
   $("#trail-events").innerHTML = visibleEvents.length ? visibleEvents.map((event) => {
     const display = displayEvent(event);
     const identity = harnessIdentity(event.harness);
-    return `<button type="button" class="activity-item trail-event ${event.action === "prompt" ? "prompt-event" : ""} ${hasProtectedInformation(event) ? "protected-event" : ""} ${event.decision === "blocked" ? "blocked-event" : ""}" data-trail-event="${event.id}" aria-label="View activity ${event.id}: ${escapeHtml(display.title)}"><div class="activity-dot ${event.severity}">${event.decision === "blocked" ? "!" : hasProtectedInformation(event) ? "?" : event.severity === "low" ? "✓" : "?"}</div><div><h3>${escapeHtml(display.title)}</h3><p>${escapeHtml(display.explanation)}</p></div><div class="activity-meta"><span class="harness-mark harness-${identity.className}" aria-hidden="true">${escapeHtml(identity.mark)}</span><span><strong>${escapeHtml(identity.label)}</strong><time title="${escapeHtml(new Date(event.createdAt).toLocaleString())}">${new Date(event.createdAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</time></span></div></button>`;
+    return `<button type="button" class="activity-item trail-event ${event.action === "prompt" ? "prompt-event" : ""} ${hasProtectedInformation(event) ? "protected-event" : ""} ${event.decision === "blocked" ? "blocked-event" : ""}" data-trail-event="${event.id}" aria-label="View activity ${event.id}: ${escapeHtml(display.title)}"><div class="activity-dot ${event.severity}">${event.decision === "blocked" ? "!" : hasProtectedInformation(event) ? "?" : event.severity === "low" ? "✓" : "?"}</div><div><h3>${escapeHtml(display.title)}</h3><p>${escapeHtml(display.explanation)}</p></div><div class="activity-meta"><span class="harness-mark harness-${identity.className}" aria-hidden="true">${escapeHtml(identity.mark)}</span><span><strong>${escapeHtml(identity.label)}</strong><time datetime="${escapeHtml(new Date(event.createdAt).toISOString())}">${escapeHtml(formatEventDateTime(event.createdAt))}</time></span></div></button>`;
   }).join("") : `<div class="activity-empty"><h3>${state.trailFilter === "all" ? "No retained events" : "No matching activity on this page"}</h3><p>${state.trailFilter === "all" ? "New activity will appear here." : "Choose another filter or use Older/Newer to check another page."}</p></div>`;
   $("#trail-newer").disabled = offset === 0;
   $("#trail-older").disabled = offset + limit >= total;
@@ -785,6 +790,8 @@ function openWarning(id) {
   $("#warning-status").textContent = synthetic ? "Synthetic judge demo · Needs review" : blocked ? "Pono Guard stopped this" : review ? (sent ? "Sensitive information sent" : "Needs review") : "Allowed activity";
   $("#warning-status").className = `eyebrow ${blocked ? "danger-text" : review ? "review-text" : "safe-text"}`;
   $("#warning-symbol").textContent = blocked ? "!" : review ? "?" : "✓";
+  $("#warning-timestamp").textContent = formatEventDateTime(event.createdAt);
+  $("#warning-timestamp").dateTime = new Date(event.createdAt).toISOString();
   $("#warning-title").textContent = display.title;
   $("#warning-explanation").textContent = display.explanation;
   $("#warning-source").textContent = event.source || "Your device";
