@@ -13,6 +13,9 @@ The competition preview supports Codex, Claude Code CLI, Cursor, and Windsurf th
 Development requirements: Node.js 22.5 or newer. PonoLens currently has no third-party runtime packages.
 
 ```bash
+git clone https://github.com/tholmgren/ponolens-agent-monitor-personal-edition.git
+cd ponolens-agent-monitor-personal-edition
+npm test
 npm start
 ```
 
@@ -31,6 +34,53 @@ curl -fsSL https://raw.githubusercontent.com/tholmgren/ponolens-agent-monitor-pe
 ```
 
 The installer downloads the public GitHub repository, requires Node.js 22.5+ and Git, installs the application under `~/.ponolens/application`, starts the loopback-only service, and opens the dashboard. It also creates `~/Applications/PonoLens.app`; opening that launcher restarts the service when necessary and opens the dashboard. You can alternatively clone the repository and run `./install.sh` from the checkout. The launcher is locally generated and is not yet a signed native distribution.
+
+## Safe sample data and demo run
+
+No seed database or external dataset is required. PonoLens creates its local SQLite database on first run. Test only with fictitious information—never real patient, client, financial, identity, or authentication data.
+
+1. Start PonoLens and open [http://127.0.0.1:4317](http://127.0.0.1:4317).
+2. Open **Agent status**, scan agents, enable one supported integration, and fully restart that harness.
+3. Submit a harmless prompt such as `Explain what this demo project does.` A normal observed event should produce a green receipt.
+4. With Pono Guard set to its stable **Report Only** mode, submit this deliberately fictional prompt:
+
+   ```text
+   Draft a follow-up for demo patient Alex Example, patient ID DEMO-001,
+   email alex@example.invalid, with high blood pressure. This is synthetic test data.
+   ```
+
+   A supported observed submission should create an orange **Needs Review** receipt with protected categories and redacted stored details.
+5. Open **Safe Prompt**, paste the same fictional prompt, continue through the wizard, and confirm that identifiers become local tokens before copying or sending the protected version.
+6. Open **Data Trail** to filter the receipts and export a redacted incident report.
+
+Experimental Block and Redact should be tested only with fictional data and only after reviewing the harness capability and limitation shown in **Agent status**. A red receipt means the compatible pre-submit adapter actually stopped the action; PonoLens does not label post-submission observation as blocked.
+
+## How GPT-5.6 and Codex accelerated the build
+
+GPT-5.6 through Codex was the primary development collaborator for this competition build. It was used to inspect and modify the repository, run the application and test suite, investigate live harness behavior, interpret screenshots and user feedback, harden local storage and HTTP boundaries, update documentation, and prepare the release. GPT-5.6/Codex is part of the development workflow; PonoLens does not secretly send audit logs or protected values to GPT-5.6 at runtime.
+
+Codex materially accelerated work in these areas:
+
+- **Cross-harness implementation:** compared real Codex, Cursor, Claude Code CLI, and Windsurf/Devin event shapes, then built normalization and adapter tests around their different hook contracts.
+- **Fast feedback loops:** reproduced stale collector, live-update, filtering, modal, settings-persistence, and responsive-layout problems; changed the code and reran focused checks after each iteration.
+- **Privacy engineering:** centralized the detector catalog used by Pono Guard and Safe Prompt, added redaction-before-SQLite guarantees, and wrote tests proving raw protected values do not enter audit records or exports.
+- **Security hardening:** helped add loopback request protections, body limits, security headers, static-file containment, database permissions and integrity checks, bounded token storage, constrained custom patterns, and fail-closed supported bridges.
+- **Release quality:** maintained the installer, macOS launcher, Apache 2.0 release documentation, honest capability language, and the automated regression suite.
+
+### Key decisions made during the build
+
+The product direction was decided iteratively with GPT-5.6/Codex evaluating implementation options and tradeoffs while the project owner made the final calls:
+
+1. **Local-first by default:** store redacted receipts and policy in owner-only SQLite rather than creating a cloud audit service for the beta.
+2. **Honest coverage over a universal-protection claim:** show Installed, Hook configured, Currently reachable, Prompt coverage, capabilities, limitations, and last event separately for every harness.
+3. **Report Only as the stable default:** label Block, Redact, and Agent Command Monitoring Experimental because third-party hook coverage differs and can change.
+4. **Never confuse observation with prevention:** use red only when a supported pre-submit hook confirms a block; sensitive information detected after transmission remains orange.
+5. **Safe Prompt as the dependable controlled path:** identify and tokenize protected identifiers locally, send only the protected draft, and restore values locally in the reply.
+6. **One detector definition source:** Pono Guard, command receipts, server analysis, and the browser-local Safe Prompt scanner share the same catalog to reduce inconsistent results.
+7. **No raw prompt archive:** retain redacted metadata needed for an understandable trail without turning PonoLens into another sensitive-data repository.
+8. **macOS-first beta:** validate the experience deeply on one operating system before claiming Windows or Linux support.
+
+The detailed judging narrative and three-minute demonstration sequence are also available in [COMPETITION.md](COMPETITION.md).
 
 ## What PonoLens does
 
