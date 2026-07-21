@@ -884,11 +884,14 @@ function renderLlmSettings(data) {
 }
 
 function updateSafeSendActions() {
-  const webAppSelected = state.llmSettings?.settings?.provider === "webapp";
+  const provider = state.llmSettings?.settings?.provider;
+  const webAppSelected = provider === "webapp";
+  const ollamaSelected = provider === "ollama";
   $("#send-default-llm").hidden = webAppSelected;
+  $("#send-default-llm").textContent = ollamaSelected ? "Continue" : "Send to default LLM";
   $("#copy-tokenized").className = webAppSelected ? "primary-button" : "secondary-button";
   $("#next-to-reply").textContent = webAppSelected ? "Next" : "Next: paste reply";
-  $("#next-to-reply").hidden = webAppSelected && !state.webAppReady;
+  $("#next-to-reply").hidden = ollamaSelected || (webAppSelected && !state.webAppReady);
 }
 
 function updateQuickProviderRows() {
