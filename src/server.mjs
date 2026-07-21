@@ -1,8 +1,9 @@
 import { createServer } from "node:http";
 import { spawnSync } from "node:child_process";
+import { chmodSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { homedir } from "node:os";
-import { extname, join, resolve } from "node:path";
+import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 import { analyzeEvent, redactContent, redactEventForStorage, restoreTokens, tokenizeContent } from "./risk-engine.mjs";
@@ -38,6 +39,8 @@ const OPENAI_PROVIDER = PROVIDER_CATALOG.modes.find((provider) => provider.id ==
 const KEYCHAIN_SERVICE = "com.ponolens.openai-api-key";
 const KEYCHAIN_ACCOUNT = "ponolens";
 const LOCAL_REQUEST_HEADER = "x-ponolens-request";
+const AUTO_START_LABEL = "com.ponolens.personal.autostart";
+const AUTO_START_PATH = join(homedir(), "Library", "LaunchAgents", `${AUTO_START_LABEL}.plist`);
 const getLlmSettings = () => ({ ...DEFAULT_LLM_SETTINGS, ...store.getSetting("llm_settings", DEFAULT_LLM_SETTINGS) });
 const getRetentionDays = () => Math.max(1, Math.min(PRODUCT_DEFAULTS.retentionMaxDays, Number(store.getSetting("retention_days", PRODUCT_DEFAULTS.retentionDays)) || PRODUCT_DEFAULTS.retentionDays));
 let lastRetentionPrune = 0;
@@ -56,6 +59,32 @@ function keychainApiKey() {
 
 function openaiApiKey() { return process.env.OPENAI_API_KEY || keychainApiKey(); }
 function openaiCredentialStatus() { return process.env.OPENAI_API_KEY ? "environment" : keychainApiKey() ? "keychain" : "none"; }
+
+function xmlEscape(value) { return String(value).replace(/[<>&'\"]/g, (character) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&apos;", '"': "&quot;" })[character]); }
+
+function setAutoStart(enabled) {
+  if (process.platform !== "darwin") throw Object.assign(new Error("Start at login is available only on macOS"), { statusCode: 400 });
+  if (!enabled) {
+    rmSync(AUTO_START_PATH, { force: true });
+    return false;
+  }
+  mkdirSync(dirname(AUTO_START_PATH), { recursive: true, mode: 0o700 });
+  const logPath = join(dataDir, "ponolens.log");
+  const plist = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>Label</key><string>${AUTO_START_LABEL}</string>
+<key>ProgramArguments</key><array><string>${xmlEscape(process.execPath)}</string><string>--experimental-sqlite</string><string>${xmlEscape(join(root, "src/server.mjs"))}</string></array>
+<key>WorkingDirectory</key><string>${xmlEscape(root)}</string>
+<key>EnvironmentVariables</key><dict><key>PONOLENS_DATA_DIR</key><string>${xmlEscape(dataDir)}</string><key>PORT</key><string>${port}</string></dict>
+<key>RunAtLoad</key><true/><key>ProcessType</key><string>Background</string>
+<key>StandardOutPath</key><string>${xmlEscape(logPath)}</string><key>StandardErrorPath</key><string>${xmlEscape(logPath)}</string>
+</dict></plist>
+`;
+  writeFileSync(AUTO_START_PATH, plist, { mode: 0o600 });
+  chmodSync(AUTO_START_PATH, 0o600);
+  return true;
+}
 
 async function ollamaModels() {
   try {
@@ -302,6 +331,7 @@ const server = createServer(async (request, response) => {
         privacy: { storage: "Local SQLite", path: join(dataDir, "ponolens.db"), cloudSync: false, rawRetention: false },
         policy: getPolicy(),
         retention: { days: getRetentionDays() },
+        autoStart: { enabled: existsSync(AUTO_START_PATH), supported: process.platform === "darwin" },
       });
     }
 
@@ -433,6 +463,12 @@ const server = createServer(async (request, response) => {
       lastRetentionPrune = 0;
       const deleted = applyRetention();
       return json(response, 200, { retention: { days }, deleted });
+    }
+
+    if (request.method === "PUT" && url.pathname === "/api/auto-start") {
+      const body = await readJsonBody(request);
+      const enabled = setAutoStart(body.enabled === true);
+      return json(response, 200, { autoStart: { enabled, supported: process.platform === "darwin" }, note: enabled ? "PonoLens will start automatically the next time you sign in to this Mac." : "PonoLens will no longer start automatically when you sign in." });
     }
 
     if (request.method === "GET" && url.pathname === "/api/llm-settings") {

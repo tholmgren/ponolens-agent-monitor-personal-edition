@@ -1,7 +1,7 @@
 import { scanContent } from "./detectors.js";
 import { HARNESS_CATALOG, PRODUCT_DEFAULTS, PROTECTION_CATEGORIES, PROVIDER_CATALOG, featureEnabled, harnessFor } from "./product-config.js";
 
-const state = { events: [], selected: null, activityFilter: "all", trailFilter: "all", trailHarness: "all", trailOffset: 0, openIntegration: null, roundTripId: null, localTokenMapping: {}, draftAliases: {}, localVaultTimer: null, localScan: null, originalFindings: [], promptCopied: false, webAppReady: false, llmController: null, llmTimer: null, llmSettings: null, llmSaveTimer: null, llmSaveVersion: 0, openaiKeyEditing: false, policyDirty: false, policySaveTimer: null, policySaveVersion: 0, toastTimer: null, toastOnClose: null, policy: { presets: {}, customValues: [] } };
+const state = { events: [], selected: null, activityFilter: "all", trailFilter: "all", trailHarness: "all", trailOffset: 0, openIntegration: null, roundTripId: null, localTokenMapping: {}, draftAliases: {}, localVaultTimer: null, localScan: null, originalFindings: [], promptCopied: false, webAppReady: false, llmController: null, llmTimer: null, llmSettings: null, llmSaveTimer: null, llmSaveVersion: 0, openaiKeyEditing: false, policyDirty: false, policySaveTimer: null, policySaveVersion: 0, toastTimer: null, toastOnClose: null, pendingSampleDelete: null, policy: { presets: {}, customValues: [] } };
 const $ = (selector) => document.querySelector(selector);
 const APPEARANCE_KEY = "ponolens-appearance";
 const WELCOME_KEY = "ponolens-welcome-seen-v1";
@@ -205,19 +205,17 @@ function activityCard(event, trail = false) {
 }
 
 function bindSampleDeleteButtons(container) {
-  container.querySelectorAll("[data-delete-sample]").forEach((button) => button.addEventListener("click", async () => {
-    const id = Number(button.dataset.deleteSample);
-    button.disabled = true;
-    try {
-      await request(`/api/events/${id}/sample`, { method: "DELETE" });
-      showHarnessToast({ title: "Sample deleted", message: "The fictional receipt was removed from local Pono Trail." });
-      await refreshDashboard();
-      if (document.body.classList.contains("trail-view")) await openTrail(state.trailOffset);
-    } catch (error) {
-      button.disabled = false;
-      showHarnessToast({ title: "Could not delete sample", message: error.message, tone: "error" });
-    }
+  container.querySelectorAll("[data-delete-sample]").forEach((button) => button.addEventListener("click", () => {
+    state.pendingSampleDelete = Number(button.dataset.deleteSample);
+    $("#sample-delete-copy").textContent = "This removes only this fictional receipt from your local Pono Trail. Real audit events are not affected.";
+    $("#sample-delete-toast").hidden = false;
+    $("#confirm-sample-delete").focus();
   }));
+}
+
+function closeSampleDeleteToast() {
+  state.pendingSampleDelete = null;
+  $("#sample-delete-toast").hidden = true;
 }
 
 function initializeProductCatalog() {
@@ -996,6 +994,11 @@ function applyDashboardState(data) {
   renderActivity(data.events);
   renderFlow(data.events[0]);
   if (data.retention) $("#retention-days").value = data.retention.days;
+  if (data.autoStart) {
+    $("#auto-start").checked = data.autoStart.enabled;
+    $("#auto-start").disabled = !data.autoStart.supported;
+    $("#auto-start-status").textContent = data.autoStart.supported ? (data.autoStart.enabled ? "Enabled. PonoLens will start after your next macOS sign-in." : "Off by default.") : "Start at login is available only on macOS.";
+  }
   const status = $("#activity-live-status");
   status.className = "live-status connected";
   status.textContent = data.events[0]
@@ -1321,6 +1324,76 @@ document.addEventListener("keydown", (event) => {
 });
 
 $("#harness-toast-close").addEventListener("click", closeHarnessToast);
+$("#cancel-sample-delete").addEventListener("click", closeSampleDeleteToast);
+$("#close-sample-delete").addEventListener("click", closeSampleDeleteToast);
+$("#confirm-sample-delete").addEventListener("click", async () => {
+  const id = state.pendingSampleDelete;
+  if (!id) return closeSampleDeleteToast();
+  const button = $("#confirm-sample-delete");
+  button.disabled = true;
+  button.textContent = "Deleting…";
+  try {
+    await request(`/api/events/${id}/sample`, { method: "DELETE" });
+    closeSampleDeleteToast();
+    await refreshDashboard();
+    if (document.body.classList.contains("trail-view")) await openTrail(state.trailOffset);
+    showHarnessToast({ title: "Sample deleted", message: "The fictional receipt was removed from local Pono Trail." });
+  } catch (error) {
+    closeSampleDeleteToast();
+    const message = error.status === 404
+      ? "The running PonoLens service is out of date. Restart PonoLens, refresh the dashboard, and try again."
+      : error.message;
+    showHarnessToast({ title: "Could not delete sample", message, tone: "error" });
+  } finally {
+    button.disabled = false;
+    button.textContent = "Delete sample";
+  }
+});
+
+function closeAutoStartToast() {
+  $("#auto-start-toast").hidden = true;
+  if (!$("#auto-start").dataset.confirmed) $("#auto-start").checked = false;
+  delete $("#auto-start").dataset.confirmed;
+}
+
+$("#cancel-auto-start").addEventListener("click", closeAutoStartToast);
+$("#close-auto-start").addEventListener("click", closeAutoStartToast);
+$("#auto-start").addEventListener("change", async () => {
+  if ($("#auto-start").checked) {
+    $("#auto-start").checked = false;
+    $("#auto-start-toast").hidden = false;
+    $("#confirm-auto-start").focus();
+    return;
+  }
+  $("#auto-start-status").textContent = "Turning off…";
+  try {
+    const result = await request("/api/auto-start", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ enabled: false }) });
+    $("#auto-start-status").textContent = result.note;
+    showHarnessToast({ title: "Start at login turned off", message: "PonoLens will not start automatically after future sign-ins." });
+  } catch (error) {
+    $("#auto-start").checked = true;
+    $("#auto-start-status").textContent = `Could not update start at login: ${error.message}`;
+  }
+});
+$("#confirm-auto-start").addEventListener("click", async () => {
+  const button = $("#confirm-auto-start");
+  button.disabled = true;
+  button.textContent = "Enabling…";
+  try {
+    const result = await request("/api/auto-start", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ enabled: true }) });
+    $("#auto-start").dataset.confirmed = "true";
+    $("#auto-start").checked = result.autoStart.enabled;
+    $("#auto-start-status").textContent = result.note;
+    closeAutoStartToast();
+    showHarnessToast({ title: "Start at login enabled", message: "PonoLens will start automatically after your next macOS sign-in." });
+  } catch (error) {
+    $("#auto-start-status").textContent = `Could not enable start at login: ${error.message}`;
+    closeAutoStartToast();
+  } finally {
+    button.disabled = false;
+    button.textContent = "Enable";
+  }
+});
 
 document.querySelectorAll(".welcome-close").forEach((button) => button.addEventListener("click", closeWelcome));
 $("#reopen-welcome").addEventListener("click", showWelcome);
@@ -1331,7 +1404,21 @@ $("#finish-welcome").addEventListener("click", async () => {
   button.textContent = "Loading samples…";
   $("#welcome-status").textContent = "Creating fictional, locally redacted receipts…";
   try {
-    const result = await request("/api/onboarding/samples", { method: "POST" });
+    let result;
+    try {
+      result = await request("/api/onboarding/samples", { method: "POST" });
+    } catch (error) {
+      if (error.status !== 404) throw error;
+      const created = [];
+      for (const harness of ["codex", "cursor", "windsurf"]) {
+        created.push(await request(`/api/integrations/${harness}/sample`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: "{}",
+        }));
+      }
+      result = { message: "Three clearly labeled sample receipts were added to Pono Trail.", events: created };
+    }
     closeWelcome();
     await refreshDashboard();
     showHarnessToast({ title: "Sample data is ready", message: result.message });

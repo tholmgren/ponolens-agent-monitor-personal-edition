@@ -5,18 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#07110f" />
     <title>PonoLens — See what your AI agents see</title>
+    <link rel="icon" href="/ponolens-logo.svg" type="image/svg+xml" />
     <script src="/appearance-bootstrap.js"></script>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
     <a class="skip-link" href="#main-content">Skip to main content</a>
-    <div class="mobile-brand" aria-label="PonoLens"><span class="mobile-brand-mark" aria-hidden="true">◉</span><strong>PonoLens</strong></div>
+    <div class="mobile-brand" aria-label="PonoLens"><img src="/ponolens-logo.svg" alt="" /><strong>PonoLens</strong></div>
     <button id="mobile-menu-button" class="mobile-menu-button" type="button" aria-label="Open navigation menu" aria-expanded="false" aria-controls="primary-sidebar"><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span></button>
     <button id="nav-backdrop" class="nav-backdrop" type="button" aria-label="Close navigation menu" hidden></button>
     <div class="shell">
       <aside id="primary-sidebar" class="sidebar">
         <div class="brand">
-          <div class="brand-mark" aria-hidden="true"><span></span></div>
+          <img class="brand-mark" src="/ponolens-logo.svg" alt="" />
           <div><strong>PonoLens</strong><small>Agent privacy</small></div>
         </div>
         <nav aria-label="Primary">
@@ -179,13 +180,15 @@
 
           <div class="faq-layout">
             <section class="faq-group" aria-labelledby="faq-started">
-              <div class="faq-group-heading"><span aria-hidden="true">01</span><div><h3 id="faq-started">Getting started</h3><p>Install, connect, and test your agents.</p></div></div>
+              <div class="faq-group-heading"><div><h3 id="faq-started">Getting started</h3><p>Install, connect, and test your agents.</p></div></div>
               <details open><summary>What is PonoLens?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>PonoLens is a local-first privacy monitor and Safe Prompt workspace for AI coding agents. It creates plain-language privacy receipts, detects configured sensitive information, and can stop supported prompts before submission.</p></div></details>
               <details><summary>Where do I find privacy receipts?<span aria-hidden="true"></span></summary><div class="faq-answer"><p><strong>Live Lens</strong> shows the newest activity and current protection status. <strong>Data Trail</strong> is the searchable history of retained events. Select an event in either place to open its human-readable privacy receipt, including what happened, detected categories, destination, decision, redacted details, and recommended next steps. Privacy Receipts is not a separate navigation screen.</p></div></details>
               <details><summary>How do I install and start PonoLens?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>Run <code>./install.sh</code> from the competition checkout. After the public installer is published, the documented one-line command will install the same local service. PonoLens opens <code>http://127.0.0.1:<span data-default-port></span></code> in your browser and must remain running while agents are monitored.</p></div></details>
               <details><summary>How do I connect and test an AI agent?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>Select <strong>Scan agents</strong>, enable the installed harness, then fully quit and reopen it so its hook configuration reloads. Expand the harness and use the <strong>Test Harness</strong> controls. <strong>Test connection</strong> verifies the adapter. <strong>Test event</strong> adds one clearly labeled synthetic receipt made from fictional data. The test event does not contact the harness or a model provider and must not be treated as proof of real traffic coverage.</p></div></details>
               <details><summary>What is the difference between the two Test Harness buttons?<span aria-hidden="true"></span></summary><div class="faq-answer"><p><strong>Test connection</strong> checks whether the configured adapter responds. It may not create a retained trail item. <strong>Test event</strong> deliberately creates one orange synthetic event through the normal detector, redaction, SQLite, Needs Review, and receipt-detail pipeline. It is always labeled as a demo and sends no prompt externally.</p></div></details>
               <details><summary>How can I see the welcome message again?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>The welcome message normally appears only on the first visit. Select <button id="reopen-welcome" type="button" class="inline-action">Show welcome message</button> to reopen it at any time. Loading sample data adds three clearly labeled fictional receipts; it never contacts an agent or AI provider.</p></div></details>
+              <details><summary>How do I start PonoLens automatically when I sign in?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>Open <strong>Settings → Start at login</strong> and turn on <strong>Start PonoLens when I sign in</strong>. Confirm the change in the toast. The setting is off by default and takes effect the next time you sign in to macOS. Turn the same switch off to stop future automatic launches. Uninstalling PonoLens removes its start-at-login configuration.</p></div></details>
+              <details><summary>How do I uninstall PonoLens?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>Before uninstalling, remove or disable PonoLens hooks from connected agent harnesses so a fail-closed hook does not keep pointing to a service that no longer exists. From a cloned repository, run <code>./uninstall.sh</code>. For the standard installation, run <code>~/.ponolens/application/uninstall.sh</code> in Terminal. The uninstaller stops PonoLens and removes the installed application, launcher, and start-at-login LaunchAgent. It intentionally keeps <code>~/.ponolens/ponolens.db</code>, policies, harness configurations, and macOS Keychain credentials. To remove audit records and policies, use <strong>Settings → Delete all local data</strong> before uninstalling.</p></div></details>
               <details><summary>Which agents are supported?<span aria-hidden="true"></span></summary><div class="faq-answer"><p><span data-supported-harnesses></span> are supported with different coverage. Claude Desktop is not Claude Code and is not supported. Detection alone does not mean the compatible hook is active.</p></div></details>
               <details><summary>Is PonoLens a native Mac application?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>Not in the competition preview. The current edition is installed with <code>install.sh</code>, runs a local service, and opens its dashboard in a browser. A polished PonoLens Personal Mac application is planned after the competition.</p></div></details>
               <details><summary>How is PonoLens licensed?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>PonoLens Personal Edition is open source under the Apache License 2.0. You may use, modify, and distribute it subject to the license terms. The license does not grant rights to the PonoLens name or trademarks.</p></div></details>
@@ -194,7 +197,7 @@
             </section>
 
             <section class="faq-group" aria-labelledby="faq-protection">
-              <div class="faq-group-heading"><span aria-hidden="true">02</span><div><h3 id="faq-protection">Protection modes</h3><p>Know exactly what each Pono Guard option does.</p></div></div>
+              <div class="faq-group-heading"><div><h3 id="faq-protection">Protection modes</h3><p>Know exactly what each Pono Guard option does.</p></div></div>
               <details><summary>Which protection mode is stable?<span aria-hidden="true"></span></summary><div class="faq-answer"><p><strong>Report Only</strong> is the stable default. It lets the action continue and creates a redacted privacy receipt. A receipt cannot undo sensitive information that was already submitted.</p></div></details>
               <details><summary>What does Experimental Block do?<span aria-hidden="true"></span></summary><div class="faq-answer"><p><strong>Block</strong> attempts to stop matching prompts at supported pre-submit hooks for <span data-intercepting-harnesses></span>. Coverage depends on the harness and hook. An event is red only when the integration actually stopped it; never treat the experimental setting as a universal prevention guarantee.</p></div></details>
               <details><summary>What does Experimental Redact do?<span aria-hidden="true"></span></summary><div class="faq-answer"><p><strong>Redact</strong> detects sensitive information locally, creates a sanitized prompt, and attempts to stop the sensitive original at supported hooks. Review and resubmit the protected copy. Current third-party hooks do not provide one reliable cross-harness way to replace and submit composer text automatically.</p></div></details>
@@ -209,7 +212,7 @@
             </section>
 
             <section class="faq-group" aria-labelledby="faq-safe-prompt">
-              <div class="faq-group-heading"><span aria-hidden="true">03</span><div><h3 id="faq-safe-prompt">Detection & Safe Prompt</h3><p>Protect identifiers before they leave your device.</p></div></div>
+              <div class="faq-group-heading"><div><h3 id="faq-safe-prompt">Detection & Safe Prompt</h3><p>Protect identifiers before they leave your device.</p></div></div>
               <details><summary>What sensitive information can PonoLens detect?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>Categories include secrets, personal and contact information, healthcare, legal, financial, and organization-defined values. Examples include emails, identity documents, patient identifiers, matter numbers, validated cards and routing numbers, and common API-key formats.</p></div></details>
               <details><summary>Is sensitive-data detection perfect?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>No. Deterministic detection can produce false positives or miss unusual formats. Validation and contextual patterns reduce noise, but important decisions still require human review.</p></div></details>
               <details><summary>Why did Safe Prompt not tokenize a person's name?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>Name detection is contextual because treating every capitalized phrase as a person would create many false positives. An unlabelled name such as <code>Joe Doe</code> may not be recognized. Add a role or label—for example, <code>Patient: Joe Doe</code>, <code>Client: Joe Doe</code>, or <code>Employee: Joe Doe</code>—then review the safe draft to confirm it was replaced. If a particular name must always be detected, add the exact name under <strong>Pono Guard → Your protected values</strong>. No automated detector can guarantee that every name will be found.</p></div></details>
@@ -220,7 +223,7 @@
             </section>
 
             <section class="faq-group" aria-labelledby="faq-privacy">
-              <div class="faq-group-heading"><span aria-hidden="true">04</span><div><h3 id="faq-privacy">Data, privacy & compliance</h3><p>Understand storage, retention, and legal boundaries.</p></div></div>
+              <div class="faq-group-heading"><div><h3 id="faq-privacy">Data, privacy & compliance</h3><p>Understand storage, retention, and legal boundaries.</p></div></div>
               <details><summary>Where are logs and settings stored?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>The default database is <code>~/.ponolens/ponolens.db</code>. Audit previews are redacted before storage. Policies and protected values stay in the local SQLite database; cloud synchronization is not enabled in this MVP.</p></div></details>
               <details><summary>How long are events kept?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>The default is <span data-default-retention></span> days. Change it in <strong>Settings</strong> to match your organization's approved retention and legal-hold policies.</p></div></details>
               <details><summary>What does the safe policy export include?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>It exports a reusable policy template while excluding user-authored labels, exact protected values, dictionary entries, and custom regular-expression patterns. It is intentionally not a raw backup of sensitive local policy data.</p></div></details>
@@ -232,7 +235,7 @@
             </section>
 
             <section class="faq-group" aria-labelledby="faq-troubleshooting">
-              <div class="faq-group-heading"><span aria-hidden="true">05</span><div><h3 id="faq-troubleshooting">Coverage & troubleshooting</h3><p>Resolve common monitoring and integration questions.</p></div></div>
+              <div class="faq-group-heading"><div><h3 id="faq-troubleshooting">Coverage & troubleshooting</h3><p>Resolve common monitoring and integration questions.</p></div></div>
               <details><summary>What is MCP coverage?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>PonoLens covers MCP calls explicitly routed through its gateway or exposed through a supported harness hook. It does not claim visibility into every MCP server or encrypted network request.</p></div></details>
               <details><summary>Which harness commands can PonoLens report?<span aria-hidden="true"></span></summary><div class="faq-answer"><ul><li><strong>Codex:</strong> commands found in covered task hooks and observable local session tool calls; unrelated Terminal commands are invisible.</li><li><strong>Claude Code CLI:</strong> command tools exposed through <code>PreToolUse</code>; Claude Desktop is unsupported.</li><li><strong>Cursor:</strong> command details exposed through its tool hooks; coverage and payload detail can vary by Cursor version and tool.</li><li><strong>Windsurf/Devin:</strong> native pre-command events and compatible pre-tool activity.</li></ul><p>Aliases, nested scripts, shell expansion, subprocesses, encrypted traffic, and commands that bypass the configured hook may hide the final operation or destination. Command output is not captured.</p></div></details>
               <details><summary>How does Data Trail filtering work?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>Risk/activity, harness, date range, and redacted-metadata search can be combined. Filtering happens in SQLite before 100-event pagination, so it searches retained history rather than only the visible page. Daily summaries use the computer's local calendar day, and repeated-risk grouping uses matching retained results.</p></div></details>
@@ -252,6 +255,12 @@
           </div>
           <p class="section-copy">Choose a comfortable appearance. PonoLens saves these preferences only in this browser.</p>
           <form id="appearance-form" class="settings-card">
+            <fieldset>
+              <legend>Start at login</legend>
+              <p class="field-help">Optionally start the local PonoLens service when you sign in to this Mac. This is off by default and does not open the dashboard automatically.</p>
+              <label class="switch-row auto-start-row"><span><strong>Start PonoLens when I sign in</strong><small>Creates a private user-level macOS LaunchAgent. Confirm before enabling; uninstall removes it.</small></span><input id="auto-start" type="checkbox" /><i></i></label>
+              <p id="auto-start-status" role="status" aria-live="polite"></p>
+            </fieldset>
             <fieldset>
               <legend>Audit-log retention</legend>
               <p class="field-help">PonoLens deletes local activity events after this period. Choose a duration that matches your organization’s approved retention and legal-hold policies.</p>
@@ -308,6 +317,18 @@
       <div class="harness-toast-icon" aria-hidden="true">✓</div>
       <div class="harness-toast-copy"><strong id="harness-toast-title">Test complete</strong><p id="harness-toast-message"></p><a id="harness-toast-action" class="primary-button" target="_blank" rel="noopener noreferrer" hidden></a></div>
       <button id="harness-toast-close" type="button" aria-label="Close notification">×</button>
+    </aside>
+
+    <aside id="sample-delete-toast" class="sample-delete-toast" role="alertdialog" aria-labelledby="sample-delete-title" aria-describedby="sample-delete-copy" hidden>
+      <div class="sample-delete-toast-icon" aria-hidden="true">!</div>
+      <div><strong id="sample-delete-title">Delete this sample?</strong><p id="sample-delete-copy">This removes only this fictional receipt from your local Pono Trail.</p><div class="sample-delete-toast-actions"><button id="cancel-sample-delete" type="button" class="secondary-button">Cancel</button><button id="confirm-sample-delete" type="button" class="danger-button">Delete sample</button></div></div>
+      <button id="close-sample-delete" type="button" aria-label="Close delete confirmation">×</button>
+    </aside>
+
+    <aside id="auto-start-toast" class="sample-delete-toast auto-start-toast" role="alertdialog" aria-labelledby="auto-start-toast-title" aria-describedby="auto-start-toast-copy" hidden>
+      <div class="sample-delete-toast-icon" aria-hidden="true">↻</div>
+      <div><strong id="auto-start-toast-title">Start PonoLens at login?</strong><p id="auto-start-toast-copy">This creates a private macOS login item that starts the local service after you sign in.</p><div class="sample-delete-toast-actions"><button id="cancel-auto-start" type="button" class="secondary-button">Cancel</button><button id="confirm-auto-start" type="button" class="primary-button">Enable</button></div></div>
+      <button id="close-auto-start" type="button" aria-label="Close start-at-login confirmation">×</button>
     </aside>
 
     <dialog id="warning-dialog">
@@ -397,11 +418,22 @@
 
     <dialog id="welcome-dialog" class="welcome-dialog" aria-labelledby="welcome-title">
       <button type="button" class="dialog-close welcome-close" aria-label="Close welcome message">×</button>
-      <div class="welcome-mark" aria-hidden="true">◎</div>
+      <img class="welcome-mark" src="/ponolens-logo.svg" alt="" />
       <p class="eyebrow">WELCOME TO PONOLENS</p>
       <h2 id="welcome-title">See what your AI agents are sharing</h2>
       <p class="warning-copy">PonoLens keeps a local, redacted trail of supported agent activity and explains privacy risks in plain language.</p>
-      <div class="welcome-points"><span><b>1</b> Scan installed agents</span><span><b>2</b> Review Pono Trail</span><span><b>3</b> Use Safe Prompt before sharing sensitive details</span></div>
+      <p class="welcome-login-note"><strong>Optional:</strong> Enable <em>Start at login</em> in Settings if you want PonoLens ready automatically after signing in to your Mac.</p>
+      <div class="welcome-capabilities" aria-label="What PonoLens does">
+        <article>
+          <strong>See agent activity</strong><p>Follow prompts, tools, files, and destinations in plain language.</p>
+        </article>
+        <article>
+          <strong>Detect sensitive data</strong><p>Check protected information locally before storing a redacted receipt.</p>
+        </article>
+        <article>
+          <strong>Prepare safer prompts</strong><p>Remove identifiers before using an approved AI provider.</p>
+        </article>
+      </div>
       <label class="sample-option"><input id="welcome-load-samples" type="checkbox" checked /><span><strong>Load three sample receipts</strong><small>Explore fictional Codex, Cursor, and Windsurf examples. Samples are labeled and can be deleted individually.</small></span></label>
       <p id="welcome-status" role="status" aria-live="polite"></p>
       <div class="dialog-actions"><button type="button" class="secondary-button welcome-close">Skip for now</button><button id="finish-welcome" type="button" class="primary-button">Get started</button></div>
