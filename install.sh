@@ -78,6 +78,9 @@ printf '%s\n' "$PONOLENS_PID" > "$PID_FILE"
 chmod 600 "$PID_FILE" "$LOG_FILE"
 
 mkdir -p "$LAUNCHER_ROOT/Contents/MacOS" "$LAUNCHER_ROOT/Contents/Resources"
+if [ -f "$INSTALL_ROOT/assets/PonoLens.icns" ]; then
+  cp "$INSTALL_ROOT/assets/PonoLens.icns" "$LAUNCHER_ROOT/Contents/Resources/PonoLens.icns"
+fi
 printf '%s\n' \
   '<?xml version="1.0" encoding="UTF-8"?>' \
   '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' \
@@ -86,6 +89,7 @@ printf '%s\n' \
   '  <key>CFBundleDevelopmentRegion</key><string>en</string>' \
   '  <key>CFBundleDisplayName</key><string>PonoLens</string>' \
   '  <key>CFBundleExecutable</key><string>PonoLens</string>' \
+  '  <key>CFBundleIconFile</key><string>PonoLens</string>' \
   '  <key>CFBundleIdentifier</key><string>com.ponolens.personal</string>' \
   '  <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>' \
   '  <key>CFBundleName</key><string>PonoLens</string>' \
@@ -116,6 +120,7 @@ printf '%s\n' \
 } > "$LAUNCHER_ROOT/Contents/MacOS/PonoLens"
 printf '%s\n' 'Created by the PonoLens installer.' > "$LAUNCHER_ROOT/Contents/Resources/ponolens-installer-receipt"
 chmod 755 "$LAUNCHER_ROOT/Contents/MacOS/PonoLens"
+touch "$LAUNCHER_ROOT"
 
 printf '\nInstalled %s competition preview in %s\n' "$PRODUCT_NAME" "$INSTALL_ROOT"
 printf 'Local data: %s\n' "$DATA_ROOT"

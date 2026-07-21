@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="background" x1="128" y1="96" x2="896" y2="928" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#123a31"/>
+      <stop offset="1" stop-color="#061611"/>
+    </linearGradient>
+    <linearGradient id="lens" x1="382" y1="366" x2="654" y2="658" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#91f0cb"/>
+      <stop offset="1" stop-color="#42b789"/>
+    </linearGradient>
+  </defs>
+  <rect x="32" y="32" width="960" height="960" rx="224" fill="url(#background)"/>
+  <rect x="48" y="48" width="928" height="928" rx="208" fill="none" stroke="#315d50" stroke-width="12"/>
+  <g fill="none" stroke="#c8ff55" stroke-width="28" stroke-linecap="round">
+    <ellipse cx="512" cy="512" rx="326" ry="138" transform="rotate(30 512 512)"/>
+    <ellipse cx="512" cy="512" rx="326" ry="138" transform="rotate(150 512 512)"/>
+  </g>
+  <circle cx="512" cy="512" r="172" fill="#0a211a" stroke="url(#lens)" stroke-width="34"/>
+  <circle cx="512" cy="512" r="88" fill="url(#lens)"/>
+  <circle cx="482" cy="480" r="25" fill="#eafff6" opacity=".9"/>
+</svg>
