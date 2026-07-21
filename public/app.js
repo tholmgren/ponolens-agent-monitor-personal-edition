@@ -1,7 +1,7 @@
 import { scanContent } from "./detectors.js";
 import { HARNESS_CATALOG, PRODUCT_DEFAULTS, PROTECTION_CATEGORIES, PROVIDER_CATALOG, featureEnabled, harnessFor } from "./product-config.js";
 
-const state = { events: [], selected: null, activityFilter: "all", trailFilter: "all", trailHarness: "all", trailOffset: 0, openIntegration: null, roundTripId: null, localTokenMapping: {}, draftAliases: {}, localVaultTimer: null, localScan: null, originalFindings: [], promptCopied: false, webAppReady: false, llmController: null, llmTimer: null, llmSettings: null, llmSaveTimer: null, llmSaveVersion: 0, policyDirty: false, policySaveTimer: null, policySaveVersion: 0, toastTimer: null, toastOnClose: null, policy: { presets: {}, customValues: [] } };
+const state = { events: [], selected: null, activityFilter: "all", trailFilter: "all", trailHarness: "all", trailOffset: 0, openIntegration: null, roundTripId: null, localTokenMapping: {}, draftAliases: {}, localVaultTimer: null, localScan: null, originalFindings: [], promptCopied: false, webAppReady: false, llmController: null, llmTimer: null, llmSettings: null, llmSaveTimer: null, llmSaveVersion: 0, openaiKeyEditing: false, policyDirty: false, policySaveTimer: null, policySaveVersion: 0, toastTimer: null, toastOnClose: null, policy: { presets: {}, customValues: [] } };
 const $ = (selector) => document.querySelector(selector);
 const APPEARANCE_KEY = "ponolens-appearance";
 const THRESHOLD_INPUTS = Object.freeze([
@@ -868,10 +868,20 @@ function renderLlmSettings(data) {
     : "Gateway available, but the Ollama service is not currently reachable.";
   $(".ollama-gateway-card").hidden = !featureEnabled("ollamaGateway");
   document.querySelectorAll('[data-feature="ollamaGateway"]').forEach((element) => { element.hidden = !featureEnabled("ollamaGateway"); });
-  $("#openai-status").textContent = data.openaiConfigured
-    ? `API key configured via ${data.openaiCredentialSource === "keychain" ? "macOS Keychain" : "environment variable"}. The key is never displayed or stored in SQLite.`
-    : "No API key configured. Save one in macOS Keychain or set OPENAI_API_KEY.";
-  $("#remove-openai-key").hidden = !data.openaiConfigured || data.openaiCredentialSource === "environment";
+  const keyConfigured = Boolean(data.openaiConfigured);
+  const environmentKey = data.openaiCredentialSource === "environment";
+  $("#openai-key-entry").hidden = keyConfigured && !state.openaiKeyEditing;
+  $("#openai-key-saved").hidden = !keyConfigured || state.openaiKeyEditing;
+  $("#cancel-openai-key").hidden = !keyConfigured || !state.openaiKeyEditing;
+  $("#save-openai-key").textContent = keyConfigured ? "Save replacement" : "Save key";
+  $("#openai-key-source").textContent = environmentKey ? "Provided by the OPENAI_API_KEY environment variable." : "Stored securely in macOS Keychain.";
+  $("#replace-openai-key").disabled = environmentKey;
+  $("#remove-openai-key").disabled = environmentKey;
+  $("#replace-openai-key").title = environmentKey ? "Replace OPENAI_API_KEY in the environment where PonoLens starts." : "";
+  $("#remove-openai-key").title = environmentKey ? "Environment variables cannot be removed from PonoLens." : "";
+  $("#openai-status").textContent = keyConfigured
+    ? environmentKey ? "The environment key is active. Change or remove it where PonoLens is launched." : "The saved key is never displayed or stored in SQLite."
+    : "Add a key to use OpenAI API with Safe Prompt.";
   const webNames = Object.fromEntries(PROVIDER_CATALOG.webApps.map((provider) => [provider.id, provider.label]));
   const openaiDefault = PROVIDER_CATALOG.modes.find((provider) => provider.id === "openai")?.defaultModel || "";
   $("#send-provider-summary").textContent = settings.provider === "ollama"
@@ -1241,11 +1251,23 @@ $("#save-openai-key").addEventListener("click", async () => {
   try {
     await request("/api/llm-credentials/openai", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ apiKey: input.value }) });
     input.value = "";
+    state.openaiKeyEditing = false;
     renderLlmSettings(await request("/api/llm-settings"));
   } catch (error) { $("#openai-status").textContent = error.message; }
 });
+$("#replace-openai-key").addEventListener("click", () => {
+  state.openaiKeyEditing = true;
+  renderLlmSettings(state.llmSettings);
+  $("#openai-api-key").focus();
+});
+$("#cancel-openai-key").addEventListener("click", () => {
+  state.openaiKeyEditing = false;
+  $("#openai-api-key").value = "";
+  renderLlmSettings(state.llmSettings);
+});
 $("#remove-openai-key").addEventListener("click", async () => {
   await request("/api/llm-credentials/openai", { method: "DELETE" });
+  state.openaiKeyEditing = false;
   renderLlmSettings(await request("/api/llm-settings"));
 });
 $("#save-retention").addEventListener("click", async () => {

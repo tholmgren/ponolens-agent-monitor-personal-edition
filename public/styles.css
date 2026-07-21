@@ -463,6 +463,9 @@ body.safe-prompt-view .safe-prompt-section { display: block; }
 .model-config label { display: grid; gap: 7px; }
 .openai-config { display: grid; gap: 14px; }
 .credential-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.credential-saved { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: color-mix(in srgb, var(--forest) 5%, var(--card)); }
+.credential-saved strong, .credential-saved small { display: block; }
+.credential-saved small { margin-top: 3px; color: var(--muted); font-size: var(--text-detail); }
 .model-config label > span { font-size: var(--text-body); font-weight: 750; }
 .model-config input, .model-config select { width: 100%; min-height: 50px; padding: 11px 13px; border: 1px solid var(--line); border-radius: 9px; background: var(--paper); color: var(--ink); font: inherit; font-size: var(--text-detail); }
 .model-config small, #llm-settings-status { color: var(--muted); font-size: var(--text-detail); line-height: 1.5; }
