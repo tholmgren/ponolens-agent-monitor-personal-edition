@@ -1,4 +1,6 @@
-# PonoLens Agent Monitor — Personal Edition
+# PonoLens Agent Monitor — Personal Edition (Beta)
+
+**Platform: macOS (Unix-based) only. A Windows release is planned for August 2026. Linux and other Unix platforms are not supported by this beta.**
 
 **See what your AI agents send, understand the risk, and stop supported unsafe prompts before they leave your computer.**
 
@@ -6,7 +8,7 @@ PonoLens is a local-first privacy monitor and Safe Prompt workspace for AI codin
 
 > **Beta software:** Review the documented harness coverage and limitations before relying on PonoLens. Report Only is stable; Block, Redact, and Agent Command Monitoring are experimental. PonoLens supports privacy workflows but is not a compliance certification or a substitute for organizational controls.
 
-The competition preview supports Codex, Claude Code CLI, Cursor, and Windsurf through a local browser dashboard. Coverage differs by harness and is always described honestly in the dashboard. This beta currently targets macOS only; Windows and Linux are on the roadmap.
+The competition preview supports Codex, Claude Code CLI, Cursor, and Windsurf through a local browser dashboard. Coverage differs by harness and is always described honestly in the dashboard. The current release is built and tested for the Unix environment provided by macOS; it is not a general Linux/Unix or Windows release.
 
 ## Quick start
 
@@ -78,7 +80,7 @@ The product direction was decided iteratively with GPT-5.6/Codex evaluating impl
 5. **Safe Prompt as the dependable controlled path:** identify and tokenize protected identifiers locally, send only the protected draft, and restore values locally in the reply.
 6. **One detector definition source:** Pono Guard, command receipts, server analysis, and the browser-local Safe Prompt scanner share the same catalog to reduce inconsistent results.
 7. **No raw prompt archive:** retain redacted metadata needed for an understandable trail without turning PonoLens into another sensitive-data repository.
-8. **macOS-first beta:** validate the experience deeply on one operating system before claiming Windows or Linux support.
+8. **macOS-first beta:** validate the experience deeply in the Unix-based macOS environment before the planned Windows release in August 2026; Linux and other Unix platforms remain future work.
 
 The detailed judging narrative and three-minute demonstration sequence are also available in [COMPETITION.md](COMPETITION.md).
 
@@ -227,7 +229,7 @@ The API decision does not prove an action was blocked. The harness adapter must 
 2. Token and cost metadata by model, harness, project, and organization, without retaining prompt content
 3. Broader MCP and Windsurf post-action receipt coverage
 4. OpenClaw and Hermes research/integrations
-5. Signed native PonoLens Personal Mac application plus Windows and Linux packaging after the competition
+5. Signed native PonoLens Personal Mac application and a Windows release targeted for August 2026; Linux and other Unix packaging remains future work
 6. PonoLens Pro production-grade prevention, updates, and professional workflows
 7. PonoLens Enterprise policy, fleet, reporting, and optional redacted metadata synchronization
 

@@ -1,7 +1,7 @@
 {
   "name": "ponolens",
   "version": "0.1.0",
-  "description": "Local-first privacy monitoring and Safe Prompt protection for AI coding agents.",
+  "description": "macOS beta for local-first privacy monitoring and Safe Prompt protection for AI coding agents.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",

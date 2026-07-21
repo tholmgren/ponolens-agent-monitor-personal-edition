@@ -14,7 +14,7 @@ LAUNCHER_ROOT="$HOME/Applications/PonoLens.app"
 fail() { printf '%s\n' "$PRODUCT_NAME installer: $*" >&2; exit 1; }
 
 OS_NAME=$(uname -s 2>/dev/null || printf 'unknown')
-[ "$OS_NAME" = "Darwin" ] || fail "this beta currently supports macOS only; Windows and Linux are on the roadmap"
+[ "$OS_NAME" = "Darwin" ] || fail "this beta supports the Unix-based macOS environment only; Windows is planned for August 2026"
 command -v node >/dev/null 2>&1 || fail "Node.js 22.5 or newer is required: https://nodejs.org/"
 NODE_BIN=$(command -v node)
 NODE_MAJOR=$(node -p "Number(process.versions.node.split('.')[0])")

@@ -1,6 +1,8 @@
-# Installing the PonoLens competition preview
+# Installing PonoLens Agent Monitor — Personal Edition (Beta)
 
-The current competition edition targets macOS only. It is a script-installed local service with a browser dashboard and a locally generated `PonoLens.app` launcher, not yet a signed native distribution. Windows and Linux are on the roadmap.
+**Platform: macOS (Unix-based) only. A Windows release is planned for August 2026. Linux and other Unix platforms are not supported by this beta.**
+
+The current competition edition is a script-installed local service with a browser dashboard and a locally generated `PonoLens.app` launcher, not yet a signed native distribution.
 
 ## Recommended installation
 
@@ -24,7 +26,7 @@ The downloaded script clones `https://github.com/tholmgren/ponolens-agent-monito
 
 - Node.js 22.5 or newer
 - Git
-- macOS (the current beta does not support Windows or Linux)
+- macOS (Unix-based); Windows is planned for August 2026, while Linux and other Unix systems are not supported by this beta
 - A supported harness: Cursor, Claude Code CLI, Codex, or Windsurf
 - A local browser for the dashboard
 - Optional: Ollama for local Safe Prompt generation

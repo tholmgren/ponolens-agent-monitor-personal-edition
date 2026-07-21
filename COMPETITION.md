@@ -1,4 +1,6 @@
-# PonoLens — competition story
+# PonoLens Agent Monitor — Personal Edition (Beta): competition story
+
+**Current platform: macOS (Unix-based) only. A Windows release is planned for August 2026. Linux and other Unix platforms are not supported by this beta.**
 
 ## One-line pitch
 
@@ -60,13 +62,14 @@ The Data Trail stores redacted receipts in owner-only local SQLite, supports com
 - Tokenization and audit controls support compliance programs but do not alone establish HIPAA, legal-privilege, SEC, or other regulatory compliance.
 - Cost/token metadata is intentionally deferred until it can be collected without retaining prompt content.
 - Command reporting covers only commands exposed by supported hooks or observable session records. It cannot guarantee visibility into aliases, nested scripts, subprocesses, final shell expansion, command output, or unrelated Terminal activity.
-- The competition preview is installed with `install.sh` and runs as a local service with a browser dashboard; it is not a native desktop application.
+- The competition preview is installed with `install.sh`, runs as a local service with a browser dashboard, and creates a local macOS launcher; it is not yet a signed native distribution.
+- The beta is built and tested only for the Unix environment provided by macOS. A Windows release is planned for August 2026; Linux and other Unix platforms are not supported in this release.
 - A signed PonoLens Personal Mac application is planned after the competition.
 
 ## Business direction
 
 - **Competition preview:** local dashboard, core harness monitoring, stable Report Only, Experimental Redact/Block, Safe Prompt, and redacted history.
-- **Personal roadmap:** a polished signed Mac application built from the validated competition experience.
+- **Personal roadmap:** a polished signed Mac application built from the validated competition experience and a Windows release planned for August 2026.
 - **Pro roadmap:** production-grade prevention, signed updates, professional workflows, and support.
 - **Enterprise:** multi-agent and multi-user governance, centrally managed redacted policies, organization reporting, SSO/RBAC, and optional redacted metadata synchronization.
 
