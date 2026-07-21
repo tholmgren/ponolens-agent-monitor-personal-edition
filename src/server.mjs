@@ -336,6 +336,33 @@ const server = createServer(async (request, response) => {
       response.end(payload); return;
     }
 
+    if (request.method === "POST" && url.pathname === "/api/onboarding/samples") {
+      const policy = getPolicy();
+      const ids = ["codex", "cursor", "windsurf"];
+      const events = ids.map((id) => {
+        const event = sampleIntegrationEvent(root, id);
+        const detected = analyzeEvent(event, policy);
+        const analysis = {
+          ...detected,
+          score: Math.max(detected.score, PRODUCT_DEFAULTS.thresholds.medium),
+          severity: "medium",
+          decision: "approval_required",
+          headline: `Sample privacy receipt · ${HARNESS_CATALOG[id]?.name || id}`,
+          explanation: "Fictional protected information was detected and redacted locally. No prompt was sent to a harness or model provider.",
+          recommendation: "Open this sample to explore the detected categories, redacted details, and recommended response.",
+        };
+        return store.add(redactEventForStorage(event, policy), analysis);
+      });
+      return json(response, 201, { ok: true, events, message: "Three clearly labeled sample receipts were added to Pono Trail." });
+    }
+
+    if (request.method === "DELETE" && url.pathname.match(/^\/api\/events\/\d+\/sample$/)) {
+      const id = Number(url.pathname.split("/")[3]);
+      if (!store.get(id)) return json(response, 404, { error: "Sample event not found" });
+      if (!store.deleteSynthetic(id)) return json(response, 403, { error: "Only synthetic sample events can be deleted here" });
+      return json(response, 200, { deleted: true, id });
+    }
+
     const integrationMatch = url.pathname.match(/^\/api\/integrations\/([^/]+)\/(connect|test|sample)$/);
     if (request.method === "POST" && integrationMatch) {
       const [, id, operation] = integrationMatch;

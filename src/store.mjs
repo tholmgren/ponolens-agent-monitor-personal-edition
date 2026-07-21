@@ -68,6 +68,12 @@ export class EventStore {
     return row ? normalize(row) : null;
   }
 
+  deleteSynthetic(id) {
+    const event = this.get(id);
+    if (!event || event.details?.details?.synthetic !== true) return false;
+    return Number(this.db.prepare("DELETE FROM events WHERE id = ?").run(id).changes || 0) === 1;
+  }
+
   list(limit = 100, offset = 0) {
     return this.db.prepare("SELECT * FROM events ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?").all(limit, offset).map(normalize);
   }

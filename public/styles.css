@@ -168,6 +168,12 @@ h2 { margin: 2px 0 0; font-size: var(--text-title); letter-spacing: -.02em; }
 .live-status.disconnected::before { background: var(--danger); }
 .filter-control select { min-height: 44px; padding: 8px 34px 8px 11px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--ink); font: inherit; font-size: var(--text-caption); cursor: pointer; }
 .activity-list { margin-top: 12px; display: grid; gap: 9px; }
+.sample-event-shell { position: relative; min-width: 0; }
+.sample-event-shell .activity-item { padding-right: 64px; }
+.sample-delete { position: absolute; z-index: 2; top: 50%; right: 10px; width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid color-mix(in srgb,var(--danger) 45%,var(--line)); border-radius: 10px; color: var(--danger); background: color-mix(in srgb,var(--danger) 5%,var(--card)); cursor: pointer; transform: translateY(-50%); }
+.sample-delete:hover { color: white; background: var(--danger); }
+.sample-delete:focus-visible { outline: 3px solid #55aaff; outline-offset: 2px; }
+.sample-delete svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .activity-more { display: flex; justify-content: center; margin-top: 16px; }
 .activity-item { width: 100%; min-width: 0; max-width: 100%; display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 15px 17px; background: white; color: var(--ink); text-align: left; border: 1px solid var(--line); border-radius: 12px; cursor: pointer; }
 .activity-item > div:nth-child(2) { min-width: 0; }
@@ -350,6 +356,16 @@ body.faq-view .faq-section { display: block; }
 .faq-answer p { margin: 0; }
 .faq-answer ul { margin: 0; padding-left: 22px; }
 .faq-answer code { padding: 2px 6px; border: 1px solid var(--line); border-radius: 5px; background: var(--paper); color: var(--ink); font-size: .92em; overflow-wrap: anywhere; }
+.inline-action { min-height: 36px; margin: 0 4px; padding: 5px 10px; border: 1px solid var(--forest); border-radius: 7px; color: var(--forest); background: var(--paper); font: inherit; font-weight: 800; cursor: pointer; }
+.welcome-dialog { width: min(650px,calc(100vw - 30px)); }
+.welcome-mark { width: 58px; height: 58px; display: grid; place-items: center; margin-bottom: 18px; border: 2px solid var(--forest); border-radius: 18px; color: var(--forest); background: color-mix(in srgb,var(--forest) 8%,var(--card)); font-size: 34px; font-weight: 900; }
+.welcome-points { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 9px; margin: 22px 0; }
+.welcome-points span { display: flex; align-items: center; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); font-size: var(--text-caption); font-weight: 750; line-height: 1.4; }
+.welcome-points b { flex: 0 0 auto; width: 25px; height: 25px; display: grid; place-items: center; border-radius: 50%; color: white; background: var(--forest); }
+.sample-option { display: grid; grid-template-columns: 24px minmax(0,1fr); gap: 12px; align-items: start; padding: 16px; border: 2px solid color-mix(in srgb,var(--warning) 60%,var(--line)); border-radius: 12px; background: color-mix(in srgb,var(--warning) 7%,var(--card)); cursor: pointer; }
+.sample-option input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--forest); }
+.sample-option strong,.sample-option small { display: block; }.sample-option small { margin-top: 5px; color: var(--muted); font-size: var(--text-caption); line-height: 1.5; }
+#welcome-status { min-height: 1.4em; color: var(--muted); font-size: var(--text-caption); }
 .category-action-grid { display: grid; gap: 10px; }
 .category-action-row { display: grid; grid-template-columns: minmax(170px,1fr) minmax(180px,240px); gap: 18px; align-items: center; padding: 12px 0; border-top: 1px solid var(--line); }
 .category-action-row strong, .category-action-row small { display: block; }
@@ -590,4 +606,9 @@ html[data-theme="dark"] .primary-button { background: #20795d; }
   .trail-event .activity-meta > span:last-child { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
   .trail-event .activity-meta strong { font-size: var(--text-detail); }
   .trail-event .activity-meta time { margin-top: 0; font-size: var(--text-caption); white-space: nowrap; }
+  .sample-event-shell .trail-event { padding-right: 58px; }
+  .sample-delete { top: 14px; right: 9px; transform: none; }
+  .welcome-points { grid-template-columns: 1fr; }
+  .welcome-dialog .dialog-actions { flex-direction: column-reverse; }
+  .welcome-dialog .dialog-actions button { width: 100%; }
 }

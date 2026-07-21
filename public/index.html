@@ -185,6 +185,7 @@
               <details><summary>How do I install and start PonoLens?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>Run <code>./install.sh</code> from the competition checkout. After the public installer is published, the documented one-line command will install the same local service. PonoLens opens <code>http://127.0.0.1:<span data-default-port></span></code> in your browser and must remain running while agents are monitored.</p></div></details>
               <details><summary>How do I connect and test an AI agent?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>Select <strong>Scan agents</strong>, enable the installed harness, then fully quit and reopen it so its hook configuration reloads. Expand the harness and use the <strong>Test Harness</strong> controls. <strong>Test connection</strong> verifies the adapter. <strong>Test event</strong> adds one clearly labeled synthetic receipt made from fictional data. The test event does not contact the harness or a model provider and must not be treated as proof of real traffic coverage.</p></div></details>
               <details><summary>What is the difference between the two Test Harness buttons?<span aria-hidden="true"></span></summary><div class="faq-answer"><p><strong>Test connection</strong> checks whether the configured adapter responds. It may not create a retained trail item. <strong>Test event</strong> deliberately creates one orange synthetic event through the normal detector, redaction, SQLite, Needs Review, and receipt-detail pipeline. It is always labeled as a demo and sends no prompt externally.</p></div></details>
+              <details><summary>How can I see the welcome message again?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>The welcome message normally appears only on the first visit. Select <button id="reopen-welcome" type="button" class="inline-action">Show welcome message</button> to reopen it at any time. Loading sample data adds three clearly labeled fictional receipts; it never contacts an agent or AI provider.</p></div></details>
               <details><summary>Which agents are supported?<span aria-hidden="true"></span></summary><div class="faq-answer"><p><span data-supported-harnesses></span> are supported with different coverage. Claude Desktop is not Claude Code and is not supported. Detection alone does not mean the compatible hook is active.</p></div></details>
               <details><summary>Is PonoLens a native Mac application?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>Not in the competition preview. The current edition is installed with <code>install.sh</code>, runs a local service, and opens its dashboard in a browser. A polished PonoLens Personal Mac application is planned after the competition.</p></div></details>
               <details><summary>How is PonoLens licensed?<span aria-hidden="true"></span></summary><div class="faq-answer"><p>PonoLens Personal Edition is open source under the Apache License 2.0. You may use, modify, and distribute it subject to the license terms. The license does not grant rights to the PonoLens name or trademarks.</p></div></details>
@@ -392,6 +393,18 @@
       <p class="warning-copy">This permanently deletes audit events, policies, protected values, dictionaries, regex rules, and local settings. It does not remove harness configuration or macOS Keychain credentials.</p>
       <label class="confirmation-field" for="delete-data-confirmation"><span>Type <strong>DELETE ALL LOCAL DATA</strong> to continue</span><input id="delete-data-confirmation" autocomplete="off" spellcheck="false" /></label>
       <div class="dialog-actions"><button type="button" class="secondary-button delete-data-close">Cancel</button><button id="confirm-delete-data" type="button" class="danger-button" disabled>Delete permanently</button></div>
+    </dialog>
+
+    <dialog id="welcome-dialog" class="welcome-dialog" aria-labelledby="welcome-title">
+      <button type="button" class="dialog-close welcome-close" aria-label="Close welcome message">×</button>
+      <div class="welcome-mark" aria-hidden="true">◎</div>
+      <p class="eyebrow">WELCOME TO PONOLENS</p>
+      <h2 id="welcome-title">See what your AI agents are sharing</h2>
+      <p class="warning-copy">PonoLens keeps a local, redacted trail of supported agent activity and explains privacy risks in plain language.</p>
+      <div class="welcome-points"><span><b>1</b> Scan installed agents</span><span><b>2</b> Review Pono Trail</span><span><b>3</b> Use Safe Prompt before sharing sensitive details</span></div>
+      <label class="sample-option"><input id="welcome-load-samples" type="checkbox" checked /><span><strong>Load three sample receipts</strong><small>Explore fictional Codex, Cursor, and Windsurf examples. Samples are labeled and can be deleted individually.</small></span></label>
+      <p id="welcome-status" role="status" aria-live="polite"></p>
+      <div class="dialog-actions"><button type="button" class="secondary-button welcome-close">Skip for now</button><button id="finish-welcome" type="button" class="primary-button">Get started</button></div>
     </dialog>
 
     <script type="module" src="/app.js"></script>

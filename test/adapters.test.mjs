@@ -240,6 +240,20 @@ test("creates a clearly labeled synthetic harness demo that stores only redacted
   assert.match(JSON.stringify(storedEvent), /\[REDACTED EMAIL ADDRESS\]/i);
 });
 
+test("sample deletion removes only explicitly synthetic events", () => {
+  const directory = mkdtempSync(join(tmpdir(), "ponolens-sample-delete-"));
+  const store = new EventStore(join(directory, "ponolens.db"));
+  const synthetic = sampleIntegrationEvent(root, "cursor");
+  const analysis = analyzeEvent(synthetic, DEFAULT_POLICY);
+  const savedSample = store.add(redactEventForStorage(synthetic, DEFAULT_POLICY), analysis);
+  const realEvent = { ...synthetic, source: "Cursor", details: { synthetic: false }, content: "harmless prompt" };
+  const savedReal = store.add(realEvent, analyzeEvent(realEvent, DEFAULT_POLICY));
+  assert.equal(store.deleteSynthetic(savedReal.id), false);
+  assert.equal(store.get(savedReal.id)?.id, savedReal.id);
+  assert.equal(store.deleteSynthetic(savedSample.id), true);
+  assert.equal(store.get(savedSample.id), null);
+});
+
 test("static asset containment rejects siblings, traversal, and dotfiles", () => {
   const publicRoot = join(root, "public");
   assert.equal(isPathInside(publicRoot, join(publicRoot, "app.js")), true);

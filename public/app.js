@@ -4,6 +4,7 @@ import { HARNESS_CATALOG, PRODUCT_DEFAULTS, PROTECTION_CATEGORIES, PROVIDER_CATA
 const state = { events: [], selected: null, activityFilter: "all", trailFilter: "all", trailHarness: "all", trailOffset: 0, openIntegration: null, roundTripId: null, localTokenMapping: {}, draftAliases: {}, localVaultTimer: null, localScan: null, originalFindings: [], promptCopied: false, webAppReady: false, llmController: null, llmTimer: null, llmSettings: null, llmSaveTimer: null, llmSaveVersion: 0, openaiKeyEditing: false, policyDirty: false, policySaveTimer: null, policySaveVersion: 0, toastTimer: null, toastOnClose: null, policy: { presets: {}, customValues: [] } };
 const $ = (selector) => document.querySelector(selector);
 const APPEARANCE_KEY = "ponolens-appearance";
+const WELCOME_KEY = "ponolens-welcome-seen-v1";
 const THRESHOLD_INPUTS = Object.freeze([
   ["threshold-large", "largeTransferPercent"], ["threshold-entire", "entireRepoPercent"], ["threshold-files", "minimumRepoFiles"],
   ["threshold-medium", "medium"], ["threshold-high", "high"], ["threshold-critical", "critical"],
@@ -193,6 +194,30 @@ function escapeHtml(value) {
 function formatEventDateTime(value) {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? "Date unavailable" : date.toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+}
+
+function activityCard(event, trail = false) {
+  const display = displayEvent(event);
+  const identity = harnessIdentity(event.harness);
+  const synthetic = isSyntheticEvent(event);
+  const card = `<button type="button" class="activity-item ${trail ? "trail-event " : ""}${event.action === "prompt" ? "prompt-event" : ""} ${hasProtectedInformation(event) ? "protected-event" : ""} ${event.decision === "blocked" ? "blocked-event" : ""}" ${trail ? `data-trail-event="${event.id}"` : `data-id="${event.id}"`} aria-label="View activity ${event.id}: ${escapeHtml(display.title)}"><div class="activity-dot ${event.severity}">${event.decision === "blocked" ? "!" : hasProtectedInformation(event) ? "?" : event.severity === "low" ? "✓" : "?"}</div><div><h3>${escapeHtml(display.title)}</h3><p>${escapeHtml(display.explanation)}</p></div><div class="activity-meta"><span class="harness-mark harness-${identity.className}" aria-hidden="true">${escapeHtml(identity.mark)}</span><span><strong>${escapeHtml(identity.label)}</strong><time datetime="${escapeHtml(new Date(event.createdAt).toISOString())}">${escapeHtml(trail ? formatEventDateTime(event.createdAt) : new Date(event.createdAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }))}</time></span></div></button>`;
+  return synthetic ? `<div class="sample-event-shell">${card}<button type="button" class="sample-delete" data-delete-sample="${event.id}" aria-label="Delete sample event ${event.id}" title="Delete this sample"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5" /></svg></button></div>` : card;
+}
+
+function bindSampleDeleteButtons(container) {
+  container.querySelectorAll("[data-delete-sample]").forEach((button) => button.addEventListener("click", async () => {
+    const id = Number(button.dataset.deleteSample);
+    button.disabled = true;
+    try {
+      await request(`/api/events/${id}/sample`, { method: "DELETE" });
+      showHarnessToast({ title: "Sample deleted", message: "The fictional receipt was removed from local Pono Trail." });
+      await refreshDashboard();
+      if (document.body.classList.contains("trail-view")) await openTrail(state.trailOffset);
+    } catch (error) {
+      button.disabled = false;
+      showHarnessToast({ title: "Could not delete sample", message: error.message, tone: "error" });
+    }
+  }));
 }
 
 function initializeProductCatalog() {
@@ -535,16 +560,10 @@ function renderActivity(events) {
     return;
   }
   $("#activity").innerHTML = events.slice(0, PRODUCT_DEFAULTS.activityPreviewLimit).map((event) => {
-    const display = displayEvent(event);
-    const identity = harnessIdentity(event.harness);
-    return `
-    <button type="button" class="activity-item ${event.action === "prompt" ? "prompt-event" : ""} ${hasProtectedInformation(event) ? "protected-event" : ""} ${event.decision === "blocked" ? "blocked-event" : ""}" data-id="${event.id}" aria-label="View activity ${event.id}: ${escapeHtml(display.title)}">
-      <div class="activity-dot ${event.severity}">${event.decision === "blocked" ? "!" : hasProtectedInformation(event) ? "?" : event.severity === "low" ? "✓" : "?"}</div>
-      <div><h3>${escapeHtml(display.title)}</h3><p>${escapeHtml(display.explanation)}</p></div>
-      <div class="activity-meta"><span class="harness-mark harness-${identity.className}" aria-hidden="true">${escapeHtml(identity.mark)}</span><span><strong>${escapeHtml(identity.label)}</strong><time>${new Date(event.createdAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</time></span></div>
-    </button>`;
+    return activityCard(event);
   }).join("");
   document.querySelectorAll(".activity-item[data-id]").forEach((item) => item.addEventListener("click", () => openWarning(Number(item.dataset.id))));
+  bindSampleDeleteButtons($("#activity"));
 }
 
 function trailQueryParams(offset = 0) { return new URLSearchParams({ limit: PRODUCT_DEFAULTS.activityPageSize, offset, filter: state.trailFilter, harness: state.trailHarness, search: $("#trail-search").value.trim(), from: $("#trail-date-from").value, to: $("#trail-date-to").value }); }
@@ -561,11 +580,7 @@ async function openTrail(offset = 0) {
   const visibleEvents = data.events;
   const filterLabel = $("#trail-filter").selectedOptions[0]?.textContent || "All activity";
   $("#trail-page-status").textContent = `Showing ${start}–${end} of ${total} ${state.trailFilter === "all" ? "retained" : filterLabel.toLowerCase()} event${total === 1 ? "" : "s"} · newest first`;
-  $("#trail-events").innerHTML = visibleEvents.length ? visibleEvents.map((event) => {
-    const display = displayEvent(event);
-    const identity = harnessIdentity(event.harness);
-    return `<button type="button" class="activity-item trail-event ${event.action === "prompt" ? "prompt-event" : ""} ${hasProtectedInformation(event) ? "protected-event" : ""} ${event.decision === "blocked" ? "blocked-event" : ""}" data-trail-event="${event.id}" aria-label="View activity ${event.id}: ${escapeHtml(display.title)}"><div class="activity-dot ${event.severity}">${event.decision === "blocked" ? "!" : hasProtectedInformation(event) ? "?" : event.severity === "low" ? "✓" : "?"}</div><div><h3>${escapeHtml(display.title)}</h3><p>${escapeHtml(display.explanation)}</p></div><div class="activity-meta"><span class="harness-mark harness-${identity.className}" aria-hidden="true">${escapeHtml(identity.mark)}</span><span><strong>${escapeHtml(identity.label)}</strong><time datetime="${escapeHtml(new Date(event.createdAt).toISOString())}">${escapeHtml(formatEventDateTime(event.createdAt))}</time></span></div></button>`;
-  }).join("") : `<div class="activity-empty"><h3>${state.trailFilter === "all" ? "No retained events" : "No matching activity on this page"}</h3><p>${state.trailFilter === "all" ? "New activity will appear here." : "Choose another filter or use Older/Newer to check another page."}</p></div>`;
+  $("#trail-events").innerHTML = visibleEvents.length ? visibleEvents.map((event) => activityCard(event, true)).join("") : `<div class="activity-empty"><h3>${state.trailFilter === "all" ? "No retained events" : "No matching activity on this page"}</h3><p>${state.trailFilter === "all" ? "New activity will appear here." : "Choose another filter or use Older/Newer to check another page."}</p></div>`;
   $("#trail-newer").disabled = offset === 0;
   $("#trail-older").disabled = offset + limit >= total;
   const dayItems = data.insights?.byDay || [], repeats = data.insights?.repeatedRisks || [];
@@ -575,6 +590,18 @@ async function openTrail(offset = 0) {
     if (event && !state.events.some((item) => item.id === event.id)) state.events.push(event);
     openWarning(Number(button.dataset.trailEvent));
   }));
+  bindSampleDeleteButtons($("#trail-events"));
+}
+
+function showWelcome() {
+  $("#welcome-status").textContent = "";
+  $("#welcome-load-samples").checked = !state.events.some(isSyntheticEvent);
+  $("#welcome-dialog").showModal();
+}
+
+function closeWelcome() {
+  localStorage.setItem(WELCOME_KEY, "true");
+  if ($("#welcome-dialog").open) $("#welcome-dialog").close();
 }
 
 function hasProtectedInformation(event) {
@@ -1295,6 +1322,27 @@ document.addEventListener("keydown", (event) => {
 
 $("#harness-toast-close").addEventListener("click", closeHarnessToast);
 
+document.querySelectorAll(".welcome-close").forEach((button) => button.addEventListener("click", closeWelcome));
+$("#reopen-welcome").addEventListener("click", showWelcome);
+$("#finish-welcome").addEventListener("click", async () => {
+  const button = $("#finish-welcome");
+  if (!$("#welcome-load-samples").checked) return closeWelcome();
+  button.disabled = true;
+  button.textContent = "Loading samples…";
+  $("#welcome-status").textContent = "Creating fictional, locally redacted receipts…";
+  try {
+    const result = await request("/api/onboarding/samples", { method: "POST" });
+    closeWelcome();
+    await refreshDashboard();
+    showHarnessToast({ title: "Sample data is ready", message: result.message });
+  } catch (error) {
+    $("#welcome-status").textContent = `Could not load samples: ${error.message}`;
+  } finally {
+    button.disabled = false;
+    button.textContent = "Get started";
+  }
+});
+
 $(".dialog-close").addEventListener("click", () => $("#warning-dialog").close());
 $(".summary-close").addEventListener("click", () => $("#summary-dialog").close());
 $("#summary-done").addEventListener("click", () => $("#summary-dialog").close());
@@ -1340,7 +1388,9 @@ document.querySelectorAll("[data-mitigation]").forEach((button) => button.addEve
   }
 }));
 
-load().catch((error) => {
+load().then(() => {
+  if (localStorage.getItem(WELCOME_KEY) !== "true") showWelcome();
+}).catch((error) => {
   $("#activity").innerHTML = `<div class="activity-item"><div class="activity-dot high">!</div><div><h3>PonoLens could not start</h3><p>${escapeHtml(error.message)}</p></div></div>`;
 });
 
