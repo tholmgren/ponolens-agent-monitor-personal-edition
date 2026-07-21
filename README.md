@@ -186,6 +186,24 @@ The home page (**Live Lens**) shows only the newest activity preview. Its **Risk
 
 In **Settings → Default AI model**, provider, model, and web-app changes save automatically. OpenAI model text uses a short typing delay before saving. API-key storage remains a separate explicit Keychain action so a partially entered credential is never saved accidentally.
 
+## Uninstall
+
+Before uninstalling, remove the PonoLens entries from each connected harness. Otherwise a fail-closed pre-submit hook may continue pointing to an application that is no longer installed. See [Uninstalling integrations](INSTALL.md#uninstalling-integrations) for the configuration paths and safe-removal guidance.
+
+If you used the one-line installer, run:
+
+```bash
+sh "$HOME/.ponolens/application/uninstall.sh"
+```
+
+If you are running PonoLens from a cloned repository, run this from the repository directory:
+
+```bash
+./uninstall.sh
+```
+
+The uninstaller stops the local service and removes the installed application plus `~/Applications/PonoLens.app`. It intentionally keeps the local database and policies under `~/.ponolens`. To remove those records, use **Settings → Delete all local data** before uninstalling. Harness configurations and macOS Keychain credentials are also left in place and must be removed separately.
+
 ## Development
 
 ```bash

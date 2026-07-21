@@ -226,7 +226,7 @@ The current dashboard focuses on installation and testing. To remove an integrat
 
 ## Uninstalling the application
 
-Run `./uninstall.sh`. It stops the competition-preview service and removes `~/.ponolens/application` plus the installer-created `~/Applications/PonoLens.app`. It intentionally leaves the local database and harness configurations in place. Use **Delete all local data** before uninstalling if you want the local database and policies removed, and remove harness integrations separately.
+For a one-line installation, run `sh "$HOME/.ponolens/application/uninstall.sh"`. From a cloned repository, run `./uninstall.sh`. It stops the competition-preview service and removes `~/.ponolens/application` plus the installer-created `~/Applications/PonoLens.app`. It intentionally leaves the local database and harness configurations in place. Use **Delete all local data** before uninstalling if you want the local database and policies removed, and remove harness integrations separately.
 
 ## License
 
