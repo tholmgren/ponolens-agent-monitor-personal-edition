@@ -528,6 +528,17 @@ function displayEvent(event) {
         : event.explanation,
     };
   }
+  if (event.action === "network" && event.destination) {
+    const protectedData = hasProtectedInformation(event);
+    return {
+      title: protectedData
+        ? `Outbound action to ${event.destination} includes protected information`
+        : `Outbound action to ${event.destination} needs review`,
+      explanation: protectedData
+        ? `PonoLens observed protected information in an outbound action targeting ${event.destination}. It did not verify whether the command completed.`
+        : `PonoLens observed an outbound action targeting ${event.destination}. The destination is not trusted, and PonoLens did not verify whether the command completed.`,
+    };
+  }
   if (event.action !== "prompt" || !event.destination) return { title: event.summary, explanation: event.explanation };
   if (event.decision === "blocked") {
     return {
@@ -819,13 +830,29 @@ function openWarning(id) {
   const detected = detectedFindings(event);
   const synthetic = isSyntheticEvent(event);
   const sent = Boolean(event.destination) && !blocked && !synthetic;
+  const protectedData = detected.length > 0;
+  const submittedPrompt = event.action === "prompt" && sent;
   const codexObserved = event.action === "prompt" && String(event.harness || "").toLowerCase() === "codex";
   const identity = harnessIdentity(event.harness);
   const tone = activityTone(event);
   const danger = tone === "danger";
   const review = tone === "review";
   $("#warning-dialog").className = blocked ? "event-blocked" : danger ? "event-danger" : review ? "event-review" : "event-allowed";
-  $("#warning-status").textContent = synthetic ? "Synthetic judge demo · Needs review" : blocked ? "Pono Guard stopped this" : danger ? "High-risk activity observed" : review ? (sent ? "Sensitive information sent" : "Needs review") : "Allowed activity";
+  $("#warning-status").textContent = synthetic
+    ? "Synthetic judge demo · Needs review"
+    : blocked
+      ? "Pono Guard stopped this"
+      : danger
+        ? "High-risk activity observed"
+        : review && protectedData && submittedPrompt
+          ? "Sensitive information sent"
+          : review && protectedData
+            ? "Sensitive information in outbound action"
+            : review && sent
+              ? "Untrusted destination"
+              : review
+                ? "Needs review"
+                : "Allowed activity";
   $("#warning-status").className = `eyebrow ${danger ? "danger-text" : review ? "review-text" : "safe-text"}`;
   $("#warning-symbol").textContent = danger ? "!" : review ? "?" : "✓";
   $("#warning-timestamp").textContent = formatEventDateTime(event.createdAt);
@@ -838,7 +865,11 @@ function openWarning(id) {
     ? "This high-risk activity was observed but not stopped. Review the destination and transferred scope, then adjust Pono Guard or the agent configuration if it was unexpected."
     : codexObserved && detected.length
     ? "This Codex prompt was already sent. Use Safe Prompt to remove identifiers before submitting a future prompt."
-    : review && sent ? `Review what was sent. ${identity.label} can block enabled categories at supported pre-submit hooks.` : event.recommendation;
+    : review && event.action === "network"
+      ? `Confirm that ${event.destination || "this destination"} was expected. PonoLens observed the outbound action but did not block it or verify completion.${protectedData ? " Review the redacted preview for protected information." : " No protected values were detected."}`
+      : review && sent && protectedData
+        ? `Review what was sent. ${identity.label} may support protection only at compatible pre-submit prompt hooks.`
+        : event.recommendation;
   $("#detected-box").classList.toggle("has-findings", detected.length > 0);
   $("#detected-note").textContent = detected.length
     ? `PonoLens inspected the original ${event.action === "prompt" ? "prompt" : "action"} locally and found ${detected.reduce((total, finding) => total + Number(finding.count || 0), 0)} protected item${detected.reduce((total, finding) => total + Number(finding.count || 0), 0) === 1 ? "" : "s"} before creating the redacted audit record.`
@@ -856,8 +887,10 @@ function openWarning(id) {
     ? "Generated locally for demonstration. No harness or model-provider transmission occurred."
     : event.decision === "blocked"
     ? "Stopped before execution. No transmission was observed."
-    : sent
-      ? `Observed after submission to ${event.destination}. This receipt cannot undo a completed transmission.`
+    : event.action === "network" && sent
+      ? `Outbound action targeting ${event.destination} observed. PonoLens did not verify whether the command completed.`
+      : submittedPrompt
+        ? `Observed after submission to ${event.destination}. This receipt cannot undo a completed transmission.`
       : "Observed locally. PonoLens found no external destination for this action.";
   const categories = protectedCategories(event);
   $("#guard-followup").hidden = !(sent && detected.length > 0);

@@ -48,6 +48,7 @@ export function analyzeEvent(input, policy = {}) {
   const repoFileCount = Number(input.repoFileCount ?? files.length ?? 0);
   const sentFileCount = Number(input.sentFileCount ?? files.length ?? 0);
   const percentOfRepo = repoFileCount > 0 ? Math.round((sentFileCount / repoFileCount) * 100) : 0;
+  const repositoryOperation = input.repositoryOperation === true;
   const detected = countMatches(content, policyDefinitions(policy, true));
   const secrets = detected.filter((finding) => finding.category === "secrets");
   const personal = detected.filter((finding) => finding.category === "contact");
@@ -69,10 +70,12 @@ export function analyzeEvent(input, policy = {}) {
   const thresholds = { ...PRODUCT_DEFAULTS.thresholds, ...(policy.thresholds || {}) };
   if (externalTransfer && percentOfRepo >= thresholds.entireRepoPercent && repoFileCount >= thresholds.minimumRepoFiles) {
     score += 55;
-    reasons.push(`The agent is sending ${percentOfRepo}% of the project (${sentFileCount} of ${repoFileCount} files).`);
+    reasons.push(`The agent is sending ${sentFileCount} project files.`);
   } else if (externalTransfer && percentOfRepo >= thresholds.largeTransferPercent && repoFileCount >= thresholds.minimumRepoFiles) {
     score += 30;
-    reasons.push(`The agent is sending a large part of the project (${sentFileCount} of ${repoFileCount} files).`);
+    reasons.push(`The agent is sending ${sentFileCount} project files.`);
+  } else if (externalTransfer && repositoryOperation && repoFileCount > 0) {
+    reasons.push(`This project contains ${repoFileCount} tracked files. PonoLens could not verify how many files were transferred.`);
   }
 
   if (externalTransfer && includesGitHistory) {
@@ -142,7 +145,7 @@ export function analyzeEvent(input, policy = {}) {
   let headline = "Activity looks normal";
   if (commandReceipt) headline = sensitiveDetected ? "This command includes sensitive information" : "Agent command observed";
   if (input.action === "prompt" && input.destination) headline = `Your prompt was submitted to ${input.destination}`;
-  if (percentOfRepo >= thresholds.entireRepoPercent && externalTransfer) headline = "This agent is uploading your entire project";
+  if (percentOfRepo >= thresholds.entireRepoPercent && externalTransfer) headline = "This agent is sending project files";
   else if (untrustedHistoryTransfer) headline = "This agent is uploading your project's Git history";
   else if (externalTransfer && enforcedSecrets.length) headline = "This action may expose a password or secret key";
   else if (externalTransfer && enforcedRegulated.length) headline = "This action includes protected information";
@@ -150,7 +153,7 @@ export function analyzeEvent(input, policy = {}) {
   else if (externalTransfer && enforcedPersonal.length) headline = "This action includes personal information";
   else if (externalTransfer && (secrets.length || personal.length || regulated.length)) headline = "Sensitive information was detected and sent";
   else if (severity === "high") headline = "This agent is sending more data than expected";
-  else if (severity === "medium") headline = "Review this action before it continues";
+  else if (severity === "medium") headline = externalTransfer ? "Review this outbound action" : "Review this action";
 
   const recommendation = commandReceipt && sensitiveDetected
     ? "Review the redacted command receipt. PonoLens did not block this command; remove sensitive arguments before running a similar command again."
@@ -173,7 +176,9 @@ export function analyzeEvent(input, policy = {}) {
     : preSubmitProtectedPrompt && sensitiveDetected
       ? `Update your Pono Guard settings to block similar ${harness?.name || "agent"} prompts before submission.`
     : decision === "approval_required"
-      ? "Check the destination and remove unnecessary information before allowing this action."
+      ? externalTransfer
+        ? "Review the destination and transmitted scope. PonoLens did not block this action or verify that it completed."
+        : "Review this action and remove unnecessary information before repeating it."
       : "No action is required. You can inspect the details if this activity was unexpected.";
 
   return {

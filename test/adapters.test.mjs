@@ -96,6 +96,8 @@ test("resolves Git push remotes and flags untrusted destinations across harnesse
     }, harness);
     assert.equal(event.destination, "github.com", harness);
     assert.equal(event.destinationTrust, "unknown", harness);
+    assert.equal(event.repoFileCount, 0, harness);
+    assert.equal(event.sentFileCount, 0, harness);
     const analysis = analyzeEvent(event, normalizePolicy({ ...DEFAULT_POLICY, trustedDestinations: [] }));
     assert.equal(analysis.severity, "medium", harness);
     assert.equal(analysis.decision, "approval_required", harness);

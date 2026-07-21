@@ -4,7 +4,7 @@ import { analyzeEvent, redactContent, restoreTokens, tokenizeContent } from "../
 import { normalizePolicy } from "../src/policy.mjs";
 import { scanContent } from "../public/detectors.js";
 
-test("blocks an excessive repository upload and explains it plainly", () => {
+test("blocks an excessive repository upload without claiming a percentage", () => {
   const result = analyzeEvent({
     harness: "cursor",
     action: "network",
@@ -18,7 +18,9 @@ test("blocks an excessive repository upload and explains it plainly", () => {
 
   assert.equal(result.decision, "blocked");
   assert.equal(result.severity, "critical");
-  assert.match(result.headline, /entire project/i);
+  assert.match(result.headline, /sending project files/i);
+  assert.match(result.explanation, /sending 100 project files/i);
+  assert.doesNotMatch(result.explanation, /100%|100 of 100/i);
   assert.match(result.explanation, /Git history/i);
 });
 
