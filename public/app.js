@@ -204,6 +204,14 @@ function activityCard(event, trail = false) {
   return synthetic ? `<div class="sample-event-shell">${card}<button type="button" class="sample-delete" data-delete-sample="${event.id}" aria-label="Delete sample event ${event.id}" title="Delete this sample"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5" /></svg></button></div>` : card;
 }
 
+function activityTone(event) {
+  if (event.decision === "blocked") return "danger";
+  if (hasProtectedInformation(event)) return "review";
+  if (["critical", "high"].includes(String(event.severity || "").toLowerCase())) return "danger";
+  if (event.decision === "approval_required" || String(event.severity || "").toLowerCase() === "medium" || isSyntheticEvent(event)) return "review";
+  return "allowed";
+}
+
 function bindSampleDeleteButtons(container) {
   container.querySelectorAll("[data-delete-sample]").forEach((button) => button.addEventListener("click", () => {
     state.pendingSampleDelete = Number(button.dataset.deleteSample);
@@ -593,7 +601,9 @@ async function openTrail(offset = 0) {
 
 function showWelcome() {
   $("#welcome-status").textContent = "";
-  $("#welcome-load-samples").checked = !state.events.some(isSyntheticEvent);
+  $("#welcome-load-samples").checked = true;
+  $("#welcome-auto-start").checked = $("#auto-start").checked;
+  $("#welcome-auto-start").disabled = $("#auto-start").disabled;
   $("#welcome-dialog").showModal();
 }
 
@@ -718,6 +728,7 @@ function renderAdvancedPolicy(policy) {
   $("#category-actions").innerHTML = Object.entries(policyCategories).map(([category, label]) => `<label class="category-action-row"><span><strong>${label}</strong><small>Choose what happens when this category is found.</small></span><select data-category-action="${category}"><option value="warn">Report Only · Stable</option><option value="redact">Redact · Experimental</option><option value="block">Block · Experimental</option></select></label>`).join("");
   document.querySelectorAll("[data-category-action]").forEach((select) => { select.value = policy.categoryActions?.[select.dataset.categoryAction] || (policy.mode === "observe" ? "warn" : policy.mode === "redact" ? "redact" : "block"); select.addEventListener("change", schedulePolicySave); });
   $("#trusted-destinations").value = (policy.trustedDestinations || []).join("\n");
+  if (!state.policyDirty) $("#save-trusted-destinations").hidden = true;
   const thresholds = { ...PRODUCT_DEFAULTS.thresholds, ...(policy.thresholds || {}) };
   for (const [id, key] of THRESHOLD_INPUTS) $(`#${id}`).value = thresholds[key];
   $("#dictionary-category").innerHTML = categoryOptions(); $("#regex-category").innerHTML = categoryOptions();
@@ -810,18 +821,22 @@ function openWarning(id) {
   const sent = Boolean(event.destination) && !blocked && !synthetic;
   const codexObserved = event.action === "prompt" && String(event.harness || "").toLowerCase() === "codex";
   const identity = harnessIdentity(event.harness);
-  const review = event.decision === "approval_required" || (sent && detected.length > 0);
-  $("#warning-dialog").className = blocked ? "event-blocked" : review ? "event-review" : "event-allowed";
-  $("#warning-status").textContent = synthetic ? "Synthetic judge demo · Needs review" : blocked ? "Pono Guard stopped this" : review ? (sent ? "Sensitive information sent" : "Needs review") : "Allowed activity";
-  $("#warning-status").className = `eyebrow ${blocked ? "danger-text" : review ? "review-text" : "safe-text"}`;
-  $("#warning-symbol").textContent = blocked ? "!" : review ? "?" : "✓";
+  const tone = activityTone(event);
+  const danger = tone === "danger";
+  const review = tone === "review";
+  $("#warning-dialog").className = blocked ? "event-blocked" : danger ? "event-danger" : review ? "event-review" : "event-allowed";
+  $("#warning-status").textContent = synthetic ? "Synthetic judge demo · Needs review" : blocked ? "Pono Guard stopped this" : danger ? "High-risk activity observed" : review ? (sent ? "Sensitive information sent" : "Needs review") : "Allowed activity";
+  $("#warning-status").className = `eyebrow ${danger ? "danger-text" : review ? "review-text" : "safe-text"}`;
+  $("#warning-symbol").textContent = danger ? "!" : review ? "?" : "✓";
   $("#warning-timestamp").textContent = formatEventDateTime(event.createdAt);
   $("#warning-timestamp").dateTime = new Date(event.createdAt).toISOString();
   $("#warning-title").textContent = display.title;
   $("#warning-explanation").textContent = display.explanation;
   $("#warning-source").textContent = event.source || "Your device";
   $("#warning-destination").textContent = synthetic ? `${event.destination || "Simulated destination"} · no transmission` : event.destination || "Stayed on this device";
-  $("#warning-recommendation").textContent = codexObserved && detected.length
+  $("#warning-recommendation").textContent = danger && !blocked
+    ? "This high-risk activity was observed but not stopped. Review the destination and transferred scope, then adjust Pono Guard or the agent configuration if it was unexpected."
+    : codexObserved && detected.length
     ? "This Codex prompt was already sent. Use Safe Prompt to remove identifiers before submitting a future prompt."
     : review && sent ? `Review what was sent. ${identity.label} can block enabled categories at supported pre-submit hooks.` : event.recommendation;
   $("#detected-box").classList.toggle("has-findings", detected.length > 0);
@@ -1065,7 +1080,20 @@ document.querySelectorAll(".nav-item[data-view]").forEach((button) => button.add
 document.querySelectorAll("[data-open-view]").forEach((button) => button.addEventListener("click", () => openSection(button.dataset.openView)));
 document.querySelectorAll("[data-advanced-help]").forEach((button) => button.addEventListener("click", () => openAdvancedHelp(button.dataset.advancedHelp)));
 document.querySelectorAll(".advanced-help-close").forEach((button) => button.addEventListener("click", () => $("#advanced-help-dialog").close()));
-for (const id of ["trusted-destinations","threshold-large","threshold-entire","threshold-files","threshold-medium","threshold-high","threshold-critical"]) $(`#${id}`).addEventListener("change", schedulePolicySave);
+$("#trusted-destinations").addEventListener("input", () => {
+  markPolicyChanged();
+  $("#save-trusted-destinations").hidden = false;
+});
+$("#save-trusted-destinations").addEventListener("click", async () => {
+  const button = $("#save-trusted-destinations");
+  button.disabled = true;
+  button.textContent = "Saving…";
+  await savePolicy();
+  if (!state.policyDirty) button.hidden = true;
+  button.disabled = false;
+  button.textContent = "Save Update";
+});
+for (const id of ["threshold-large","threshold-entire","threshold-files","threshold-medium","threshold-high","threshold-critical"]) $(`#${id}`).addEventListener("change", schedulePolicySave);
 $("#add-dictionary").addEventListener("click", () => {
   const label = $("#dictionary-label").value.trim(), values = $("#dictionary-values").value.split(/\r?\n/).map((value) => value.trim()).filter(Boolean);
   if (!values.length) return $("#dictionary-values").focus();
@@ -1399,31 +1427,40 @@ document.querySelectorAll(".welcome-close").forEach((button) => button.addEventL
 $("#reopen-welcome").addEventListener("click", showWelcome);
 $("#finish-welcome").addEventListener("click", async () => {
   const button = $("#finish-welcome");
-  if (!$("#welcome-load-samples").checked) return closeWelcome();
+  const loadSamples = $("#welcome-load-samples").checked;
+  const autoStartChanged = !$("#welcome-auto-start").disabled && $("#welcome-auto-start").checked !== $("#auto-start").checked;
+  if (!loadSamples && !autoStartChanged) return closeWelcome();
   button.disabled = true;
-  button.textContent = "Loading samples…";
-  $("#welcome-status").textContent = "Creating fictional, locally redacted receipts…";
+  button.textContent = "Setting up…";
+  $("#welcome-status").textContent = loadSamples ? "Creating fictional, locally redacted receipts…" : "Updating start at login…";
   try {
-    let result;
-    try {
-      result = await request("/api/onboarding/samples", { method: "POST" });
-    } catch (error) {
-      if (error.status !== 404) throw error;
-      const created = [];
-      for (const harness of ["codex", "cursor", "windsurf"]) {
-        created.push(await request(`/api/integrations/${harness}/sample`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: "{}",
-        }));
+    let sampleResult = null;
+    if (loadSamples) {
+      try {
+        sampleResult = await request("/api/onboarding/samples", { method: "POST" });
+      } catch (error) {
+        if (error.status !== 404) throw error;
+        const created = [];
+        for (const harness of ["codex", "cursor", "windsurf"]) {
+          created.push(await request(`/api/integrations/${harness}/sample`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: "{}",
+          }));
+        }
+        sampleResult = { message: "Three clearly labeled sample receipts were added to Pono Trail.", events: created };
       }
-      result = { message: "Three clearly labeled sample receipts were added to Pono Trail.", events: created };
+    }
+    if (autoStartChanged) {
+      const result = await request("/api/auto-start", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ enabled: $("#welcome-auto-start").checked }) });
+      $("#auto-start").checked = result.autoStart.enabled;
+      $("#auto-start-status").textContent = result.note;
     }
     closeWelcome();
     await refreshDashboard();
-    showHarnessToast({ title: "Sample data is ready", message: result.message });
+    showHarnessToast({ title: "PonoLens is ready", message: sampleResult?.message || "Your start-at-login preference was saved." });
   } catch (error) {
-    $("#welcome-status").textContent = `Could not load samples: ${error.message}`;
+    $("#welcome-status").textContent = `Could not finish setup: ${error.message}`;
   } finally {
     button.disabled = false;
     button.textContent = "Get started";
